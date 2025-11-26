@@ -9,14 +9,14 @@ import { parseArguments } from './utils/index.js';
 async function main(): Promise<void> {
   // Parse command line arguments
   const args = process.argv.slice(2);
-  const shouldContinue = await parseArguments(args);
+  const parseResult = await parseArguments(args);
 
-  if (shouldContinue) {
+  if (parseResult.shouldExit) {
     return;
   }
 
   // Start interactive CLI mode
-  const cli = new wrapper();
+  const cli = new wrapper(parseResult.configPath);
   await cli.connect();
   await cli.start();
 }

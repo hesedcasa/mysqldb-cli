@@ -23,8 +23,10 @@ export class wrapper {
   private config: Config | null = null;
   private currentProfile: string | null = null;
   private currentFormat: 'table' | 'json' | 'csv' = 'table';
+  private configPath?: string;
 
-  constructor() {
+  constructor(configPath?: string) {
+    this.configPath = configPath;
     this.rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
@@ -38,7 +40,7 @@ export class wrapper {
   async connect(): Promise<void> {
     try {
       const projectRoot = process.env.CLAUDE_PROJECT_ROOT || process.cwd();
-      this.config = loadConfig(projectRoot);
+      this.config = loadConfig(projectRoot, this.configPath);
       this.currentProfile = this.config.defaultProfile;
       this.currentFormat = this.config.defaultFormat;
 
@@ -46,9 +48,12 @@ export class wrapper {
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error('Failed to load configuration:', errorMessage);
-      console.error('\nMake sure:');
-      console.error('1. .claude/mysql-connector.local.md exists');
-      console.error('2. The file contains valid database profiles in YAML frontmatter');
+      if (!this.configPath) {
+        console.error('\nMake sure:');
+        console.error('1. .claude/mysql-connector.local.md exists');
+        console.error('2. The file contains valid database profiles in YAML frontmatter');
+        console.error('\nOr use --config/-c to specify a custom config file path.');
+      }
       process.exit(1);
     }
   }
