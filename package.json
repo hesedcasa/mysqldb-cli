@@ -1,0 +1,61 @@
+{
+  "name": "mysql-cli",
+  "version": "0.0.0",
+  "description": "A powerful command-line interface for MySQL database interaction with built-in safety features and multiple output formats",
+  "main": "dist/index.js",
+  "bin": {
+    "mysql-cli": "dist/index.js"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "tsx src/index.ts",
+    "dev": "tsx src/index.ts",
+    "conductor": "tsx src/conductor-cli.ts",
+    "conductor:dev": "tsx src/conductor-cli.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "find-deadcode": "ts-prune",
+    "format": "eslint --cache --fix --quiet . && prettier --write --cache .",
+    "pre-commit": "npm run format && npm run find-deadcode"
+  },
+  "keywords": [
+    "mysql",
+    "cli",
+    "ai-agents",
+    "database"
+  ],
+  "author": "Hesed",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "mysql2": "^3.15.3",
+    "yaml": "^2.8.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@trivago/prettier-plugin-sort-imports": "^6.0.0",
+    "@types/node": "^24.10.1",
+    "@vitest/coverage-v8": "^4.0.9",
+    "@vitest/ui": "^4.0.9",
+    "eslint": "^9.39.1",
+    "globals": "^16.5.0",
+    "jiti": "^2.6.1",
+    "prettier": "3.6.2",
+    "ts-prune": "^0.10.3",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0",
+    "typescript-eslint": "^8.46.4",
+    "vitest": "^4.0.9"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hesedcasa/mysql-cli.git"
+  },
+  "types": "./dist/index.d.ts",
+  "bugs": {
+    "url": "https://github.com/hesedcasa/mysql-cli/issues"
+  },
+  "homepage": "https://github.com/hesedcasa/mysql-cli#readme"
+}
