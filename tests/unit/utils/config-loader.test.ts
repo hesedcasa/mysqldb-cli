@@ -11,7 +11,7 @@ describe('config-loader', () => {
 
   beforeEach(() => {
     // Create a temporary directory for test configs
-    testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mysql-cli-test-'));
+    testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mysqldb-cli-test-'));
     fs.mkdirSync(path.join(testDir, '.claude'));
   });
 

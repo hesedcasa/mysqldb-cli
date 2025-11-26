@@ -228,13 +228,13 @@ mysql> describe-table '{"table":"users"}'
 mysql> exit                              # Exit
 
 # Headless mode (one-off commands):
-npx mysql-cli test-connection '{"profile":"local"}'
-npx mysql-cli list-databases
-npx mysql-cli query '{"query":"SELECT COUNT(*) FROM users","format":"json"}'
-npx mysql-cli --commands        # List all commands
-npx mysql-cli query -h          # Command-specific help
-npx mysql-cli --help            # General help
-npx mysql-cli --version         # Show version
+npx mysqldb-cli test-connection '{"profile":"local"}'
+npx mysqldb-cli list-databases
+npx mysqldb-cli query '{"query":"SELECT COUNT(*) FROM users","format":"json"}'
+npx mysqldb-cli --commands        # List all commands
+npx mysqldb-cli query -h          # Command-specific help
+npx mysqldb-cli --help            # General help
+npx mysqldb-cli --version         # Show version
 ```
 
 ## Code Structure & Module Responsibilities

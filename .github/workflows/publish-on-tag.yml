@@ -3,7 +3,7 @@ name: publish-on-tag
 on:
   push:
     tags:
-      - 'mysql-cli-v*'
+      - 'mysqldb-cli-v*'
   workflow_dispatch:
     inputs:
       npm-publish:

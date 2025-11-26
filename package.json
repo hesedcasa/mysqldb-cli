@@ -1,10 +1,10 @@
 {
-  "name": "mysql-cli",
+  "name": "mysqldb-cli",
   "version": "0.0.0",
   "description": "A powerful command-line interface for MySQL database interaction with built-in safety features and multiple output formats",
   "main": "dist/index.js",
   "bin": {
-    "mysql-cli": "dist/index.js"
+    "mysqldb-cli": "dist/index.js"
   },
   "type": "module",
   "scripts": {
@@ -51,11 +51,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hesedcasa/mysql-cli.git"
+    "url": "git+https://github.com/hesedcasa/mysqldb-cli.git"
   },
   "types": "./dist/index.d.ts",
   "bugs": {
-    "url": "https://github.com/hesedcasa/mysql-cli/issues"
+    "url": "https://github.com/hesedcasa/mysqldb-cli/issues"
   },
-  "homepage": "https://github.com/hesedcasa/mysql-cli#readme"
+  "homepage": "https://github.com/hesedcasa/mysqldb-cli#readme"
 }

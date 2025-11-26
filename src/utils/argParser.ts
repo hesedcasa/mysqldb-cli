@@ -55,20 +55,20 @@ MySQL CLI
 
 Usage:
 
-npx mysql-cli                             start interactive CLI
-npx mysql-cli --commands                  list all available commands
-npx mysql-cli <command> -h                quick help on <command>
-npx mysql-cli <command> <arg>             run command in headless mode
+npx mysqldb-cli                             start interactive CLI
+npx mysqldb-cli --commands                  list all available commands
+npx mysqldb-cli <command> -h                quick help on <command>
+npx mysqldb-cli <command> <arg>             run command in headless mode
 
 All commands:
 
 ${COMMANDS.join(', ')}
 
 Examples:
-  npx mysql-cli query '{"query":"SELECT * FROM users LIMIT 5"}'
-  npx mysql-cli describe-table '{"table":"users","profile":"local"}'
-  npx mysql-cli list-databases '{"profile":"local"}'
-  npx mysql-cli test-connection
+  npx mysqldb-cli query '{"query":"SELECT * FROM users LIMIT 5"}'
+  npx mysqldb-cli describe-table '{"table":"users","profile":"local"}'
+  npx mysqldb-cli list-databases '{"profile":"local"}'
+  npx mysqldb-cli test-connection
 
 Interactive mode special commands:
   profile <name>   - Switch database profile

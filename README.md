@@ -1,6 +1,6 @@
 # MySQL CLI
 
-[![npm mysql-cli package](https://img.shields.io/npm/v/mysql-cli.svg)](https://npmjs.org/package/mysql-cli)
+[![npm mysqldb-cli package](https://img.shields.io/npm/v/mysqldb-cli.svg)](https://npmjs.org/package/mysqldb-cli)
 
 A powerful command-line interface for MySQL database interaction with built-in safety features and multiple output formats.
 
@@ -24,7 +24,7 @@ A powerful command-line interface for MySQL database interaction with built-in s
 ## Installation
 
 ```bash
-npm install -g mysql-cli
+npm install -g mysqldb-cli
 ```
 
 ## Configuration
@@ -94,7 +94,7 @@ This file stores your MySQL database connection profiles.
 Start the CLI and interact with MySQL through a REPL:
 
 ```bash
-npx mysql-cli
+npx mysqldb-cli
 ```
 
 Once started, you'll see the `mysql>` prompt:
@@ -156,34 +156,34 @@ Execute single commands without starting the interactive REPL:
 
 ```bash
 # General format
-npx mysql-cli <command> '<json_arguments>'
+npx mysqldb-cli <command> '<json_arguments>'
 
 # Examples
-npx mysql-cli test-connection '{"profile":"local"}'
-npx mysql-cli list-databases
-npx mysql-cli list-tables '{"profile":"production"}'
-npx mysql-cli describe-table '{"table":"users"}'
-npx mysql-cli query '{"query":"SELECT COUNT(*) FROM users","format":"json"}'
-npx mysql-cli explain-query '{"query":"SELECT * FROM users WHERE id = 1"}'
+npx mysqldb-cli test-connection '{"profile":"local"}'
+npx mysqldb-cli list-databases
+npx mysqldb-cli list-tables '{"profile":"production"}'
+npx mysqldb-cli describe-table '{"table":"users"}'
+npx mysqldb-cli query '{"query":"SELECT COUNT(*) FROM users","format":"json"}'
+npx mysqldb-cli explain-query '{"query":"SELECT * FROM users WHERE id = 1"}'
 ```
 
 ### Command Line Options
 
 ```bash
 # Show version
-npx mysql-cli --version
-npx mysql-cli -v
+npx mysqldb-cli --version
+npx mysqldb-cli -v
 
 # List all commands
-npx mysql-cli --commands
+npx mysqldb-cli --commands
 
 # Get help for specific command
-npx mysql-cli query -h
-npx mysql-cli describe-table -h
+npx mysqldb-cli query -h
+npx mysqldb-cli describe-table -h
 
 # General help
-npx mysql-cli --help
-npx mysql-cli -h
+npx mysqldb-cli --help
+npx mysqldb-cli -h
 ```
 
 ## Available Commands
@@ -209,8 +209,8 @@ mysql> query '{"query":"SELECT * FROM users","format":"json"}'
 mysql> query '{"query":"SELECT * FROM users","profile":"production","format":"csv"}'
 
 # Headless mode
-npx mysql-cli query '{"query":"SELECT * FROM users LIMIT 10"}'
-npx mysql-cli query '{"query":"SELECT COUNT(*) FROM posts","format":"json"}'
+npx mysqldb-cli query '{"query":"SELECT * FROM users LIMIT 10"}'
+npx mysqldb-cli query '{"query":"SELECT COUNT(*) FROM posts","format":"json"}'
 ```
 
 ### list-databases
@@ -229,8 +229,8 @@ mysql> list-databases
 mysql> list-databases '{"profile":"production"}'
 
 # Headless mode
-npx mysql-cli list-databases
-npx mysql-cli list-databases '{"profile":"production"}'
+npx mysqldb-cli list-databases
+npx mysqldb-cli list-databases '{"profile":"production"}'
 ```
 
 ### list-tables
@@ -249,8 +249,8 @@ mysql> list-tables
 mysql> list-tables '{"profile":"local"}'
 
 # Headless mode
-npx mysql-cli list-tables
-npx mysql-cli list-tables '{"profile":"production"}'
+npx mysqldb-cli list-tables
+npx mysqldb-cli list-tables '{"profile":"production"}'
 ```
 
 ### describe-table
@@ -270,8 +270,8 @@ mysql> describe-table '{"table":"users"}'
 mysql> describe-table '{"table":"posts","profile":"production"}'
 
 # Headless mode
-npx mysql-cli describe-table '{"table":"users"}'
-npx mysql-cli describe-table '{"table":"orders","profile":"production"}'
+npx mysqldb-cli describe-table '{"table":"users"}'
+npx mysqldb-cli describe-table '{"table":"orders","profile":"production"}'
 ```
 
 ### show-indexes
@@ -291,8 +291,8 @@ mysql> show-indexes '{"table":"users"}'
 mysql> show-indexes '{"table":"posts","profile":"local"}'
 
 # Headless mode
-npx mysql-cli show-indexes '{"table":"users"}'
-npx mysql-cli show-indexes '{"table":"orders","profile":"production"}'
+npx mysqldb-cli show-indexes '{"table":"users"}'
+npx mysqldb-cli show-indexes '{"table":"orders","profile":"production"}'
 ```
 
 ### explain-query
@@ -312,8 +312,8 @@ mysql> explain-query '{"query":"SELECT * FROM users WHERE email = 'alice@example
 mysql> explain-query '{"query":"SELECT u.*, p.* FROM users u JOIN posts p ON u.id = p.user_id"}'
 
 # Headless mode
-npx mysql-cli explain-query '{"query":"SELECT * FROM users WHERE id = 1"}'
-npx mysql-cli explain-query '{"query":"SELECT * FROM orders WHERE created_at > NOW() - INTERVAL 7 DAY"}'
+npx mysqldb-cli explain-query '{"query":"SELECT * FROM users WHERE id = 1"}'
+npx mysqldb-cli explain-query '{"query":"SELECT * FROM orders WHERE created_at > NOW() - INTERVAL 7 DAY"}'
 ```
 
 ### test-connection
@@ -332,8 +332,8 @@ mysql> test-connection
 mysql> test-connection '{"profile":"production"}'
 
 # Headless mode
-npx mysql-cli test-connection
-npx mysql-cli test-connection '{"profile":"production"}'
+npx mysqldb-cli test-connection
+npx mysqldb-cli test-connection '{"profile":"production"}'
 ```
 
 ## Output Formats
@@ -394,7 +394,7 @@ The CLI includes built-in safety features to prevent accidental data loss:
 
 ```bash
 # Start the CLI
-npx mysql-cli
+npx mysqldb-cli
 
 # Explore the database
 mysql> list-databases
@@ -407,13 +407,13 @@ mysql> show-indexes '{"table":"users"}'
 
 ```bash
 # Check user count
-npx mysql-cli query '{"query":"SELECT COUNT(*) as total FROM users"}'
+npx mysqldb-cli query '{"query":"SELECT COUNT(*) as total FROM users"}'
 
 # Get recent orders
-npx mysql-cli query '{"query":"SELECT * FROM orders ORDER BY created_at DESC LIMIT 10"}'
+npx mysqldb-cli query '{"query":"SELECT * FROM orders ORDER BY created_at DESC LIMIT 10"}'
 
 # Export data as JSON
-npx mysql-cli query '{"query":"SELECT * FROM products","format":"json"}' > products.json
+npx mysqldb-cli query '{"query":"SELECT * FROM products","format":"json"}' > products.json
 ```
 
 ### Query Optimization
@@ -430,14 +430,14 @@ mysql> show-indexes '{"table":"users"}'
 
 ```bash
 # Test production connection
-npx mysql-cli test-connection '{"profile":"production"}'
+npx mysqldb-cli test-connection '{"profile":"production"}'
 
 # Compare table structures
-npx mysql-cli describe-table '{"table":"users","profile":"local"}'
-npx mysql-cli describe-table '{"table":"users","profile":"production"}'
+npx mysqldb-cli describe-table '{"table":"users","profile":"local"}'
+npx mysqldb-cli describe-table '{"table":"users","profile":"production"}'
 
 # Check production data
-npx mysql-cli query '{"query":"SELECT COUNT(*) FROM users","profile":"production"}'
+npx mysqldb-cli query '{"query":"SELECT COUNT(*) FROM users","profile":"production"}'
 ```
 
 ## Development
