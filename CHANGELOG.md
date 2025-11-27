@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/hesedcasa/mysqldb-cli/compare/mysqldb-cli-v1.1.0...mysqldb-cli-v1.2.0) (2025-11-27)
+
+
+### 🎉 Features
+
+* added format parameter support to three commands ([c8fe122](https://github.com/hesedcasa/mysqldb-cli/commit/c8fe122addf3c004d4b4baf40aaed4f05c6fcb4a))
+
 ## [1.1.0](https://github.com/hesedcasa/mysqldb-cli/compare/mysqldb-cli-v1.0.0...mysqldb-cli-v1.1.0) (2025-11-27)
 
 
