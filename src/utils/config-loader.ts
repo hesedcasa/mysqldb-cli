@@ -43,19 +43,20 @@ type ConnectionOptions = Pick<
 >;
 
 /**
- * Load MySQL connection profiles from .claude/mysql-connector.local.md
+ * Load MySQL connection profiles from a configuration file
  *
  * @param projectRoot - Project root directory
+ * @param customConfigPath - Optional custom path to config file (overrides default)
  * @returns Configuration object with profiles and settings
  */
-export function loadConfig(projectRoot: string): Config {
-  const configPath = path.join(projectRoot, '.claude', 'mysql-connector.local.md');
+export function loadConfig(projectRoot: string, customConfigPath?: string): Config {
+  const configPath = customConfigPath || path.join(projectRoot, '.claude', 'mysql-connector.local.md');
 
   if (!fs.existsSync(configPath)) {
-    throw new Error(
-      `Configuration file not found at ${configPath}\n` +
-        `Please create .claude/mysql-connector.local.md with your database profiles.`
-    );
+    const helpText = customConfigPath
+      ? `Please ensure the file exists at the specified path.`
+      : `Please create .claude/mysql-connector.local.md with your database profiles.`;
+    throw new Error(`Configuration file not found at ${configPath}\n${helpText}`);
   }
 
   const content = fs.readFileSync(configPath, 'utf-8');

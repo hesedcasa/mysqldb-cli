@@ -14,17 +14,20 @@ import {
  * Execute a MySQL command in headless mode
  * @param command - The command name to execute
  * @param arg - JSON string or null for the command arguments
+ * @param flag - Optional flag (unused currently)
+ * @param configPath - Optional path to config file
  */
 export const runCommand = async (
   command: string,
   arg: string | null,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _flag: string | null
+  _flag: string | null,
+  configPath?: string
 ): Promise<void> => {
   try {
     // Load config to get default profile
     const projectRoot = process.env.CLAUDE_PROJECT_ROOT || process.cwd();
-    const config = loadConfig(projectRoot);
+    const config = loadConfig(projectRoot, configPath);
 
     // Parse arguments
     const args = arg && arg.trim() !== '' ? JSON.parse(arg) : {};
