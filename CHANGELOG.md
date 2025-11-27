@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.0](https://github.com/hesedcasa/mysqldb-cli/compare/mysqldb-cli-v1.0.0...mysqldb-cli-v1.1.0) (2025-11-27)
+
+
+### 🎉 Features
+
+* add TOON output format support ([#4](https://github.com/hesedcasa/mysqldb-cli/issues/4)) ([bd47603](https://github.com/hesedcasa/mysqldb-cli/commit/bd476038c35dc29547e6fce1474c9f25ba906b85))
+
+
+### 🛠️ Fixes
+
+* fix argument parsing for JSON with white space in CLI ([fcd65fe](https://github.com/hesedcasa/mysqldb-cli/commit/fcd65feb0e57065a2be2a3c64ce96d269b485964))
+
 ## 1.0.0 (2025-11-26)
 
 
