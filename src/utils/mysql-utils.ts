@@ -191,7 +191,28 @@ export class MySQLUtil {
       return '';
     }
 
-    return encode(rows);
+    // Convert special types (Date, Buffer) to serializable values for TOON
+    const serializedRows = rows.map(row => {
+      const serialized: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(row)) {
+        if (value instanceof Date) {
+          // Check if date is valid before converting
+          if (!isNaN(value.getTime())) {
+            serialized[key] = value.toISOString();
+          } else {
+            serialized[key] = null;
+          }
+        } else if (Buffer.isBuffer(value)) {
+          // Convert Buffer to base64 string
+          serialized[key] = value.toString('base64');
+        } else {
+          serialized[key] = value;
+        }
+      }
+      return serialized;
+    });
+
+    return encode(serializedRows);
   }
 
   /**
