@@ -37,12 +37,12 @@ async function initDB(): Promise<MySQLUtil> {
  * Execute SQL query
  * @param query - SQL query to execute
  * @param profile - Database profile name
- * @param format - Output format (table, json, csv)
+ * @param format - Output format (table, json, csv, toon)
  */
 export async function executeQuery(
   query: string,
   profile: string,
-  format: 'table' | 'json' | 'csv' = 'table'
+  format: 'table' | 'json' | 'csv' | 'toon' = 'table'
 ): Promise<QueryResult> {
   const db = await initDB();
   return await db.executeQuery(profile, query, format);

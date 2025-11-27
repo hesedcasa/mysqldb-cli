@@ -1,3 +1,4 @@
+import { encode } from '@toon-format/toon';
 import mysql from 'mysql2/promise';
 import type { Connection, FieldPacket, OkPacket, RowDataPacket } from 'mysql2/promise';
 
@@ -183,12 +184,44 @@ export class MySQLUtil {
   }
 
   /**
+   * Format query results as TOON (Token-Oriented Object Notation)
+   */
+  formatAsToon(rows: RowDataPacket[]): string {
+    if (!rows || rows.length === 0) {
+      return '';
+    }
+
+    // Convert special types (Date, Buffer) to serializable values for TOON
+    const serializedRows = rows.map(row => {
+      const serialized: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(row)) {
+        if (value instanceof Date) {
+          // Check if date is valid before converting
+          if (!isNaN(value.getTime())) {
+            serialized[key] = value.toISOString();
+          } else {
+            serialized[key] = null;
+          }
+        } else if (Buffer.isBuffer(value)) {
+          // Convert Buffer to base64 string
+          serialized[key] = value.toString('base64');
+        } else {
+          serialized[key] = value;
+        }
+      }
+      return serialized;
+    });
+
+    return encode(serializedRows);
+  }
+
+  /**
    * Validate query and execute if safe
    */
   async executeQuery(
     profileName: string,
     query: string,
-    format: 'table' | 'json' | 'csv' = 'table'
+    format: 'table' | 'json' | 'csv' | 'toon' = 'table'
   ): Promise<QueryResult> {
     // Validate query against blacklist
     const blacklistCheck = checkBlacklist(query, this.config.safety.blacklisted_operations);
@@ -242,6 +275,8 @@ export class MySQLUtil {
           result += this.formatAsJson(rows as RowDataPacket[]);
         } else if (format === 'csv') {
           result += this.formatAsCsv(rows as RowDataPacket[], fields as FieldPacket[]);
+        } else if (format === 'toon') {
+          result += this.formatAsToon(rows as RowDataPacket[]);
         } else {
           result += this.formatAsTable(rows as RowDataPacket[], fields as FieldPacket[]);
         }

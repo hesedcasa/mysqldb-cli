@@ -31,7 +31,7 @@ export interface Config {
   profiles: Record<string, MySQLProfile>;
   safety: SafetyConfig;
   defaultProfile: string;
-  defaultFormat: 'table' | 'json' | 'csv';
+  defaultFormat: 'table' | 'json' | 'csv' | 'toon';
 }
 
 /**

@@ -235,6 +235,166 @@ describe('MySQLUtil', () => {
     });
   });
 
+  describe('formatAsToon', () => {
+    it('should format rows as TOON', () => {
+      const rows: RowDataPacket[] = [
+        { id: 1, name: 'Alice', email: 'alice@example.com' },
+        { id: 2, name: 'Bob', email: 'bob@example.com' },
+      ] as RowDataPacket[];
+
+      const result = mysqlUtil.formatAsToon(rows);
+
+      // TOON format should be a string
+      expect(typeof result).toBe('string');
+      // Should contain some representation of the data
+      expect(result.length).toBeGreaterThan(0);
+    });
+
+    it('should return empty string for empty result set', () => {
+      const rows: RowDataPacket[] = [];
+
+      const result = mysqlUtil.formatAsToon(rows);
+
+      expect(result).toBe('');
+    });
+
+    it('should handle NULL values in TOON', () => {
+      const rows: RowDataPacket[] = [{ id: 1, name: 'Alice', email: null }] as RowDataPacket[];
+
+      const result = mysqlUtil.formatAsToon(rows);
+
+      // TOON should still produce output
+      expect(typeof result).toBe('string');
+      expect(result.length).toBeGreaterThan(0);
+    });
+
+    it('should convert Date objects to ISO strings', () => {
+      const testDate = new Date('2023-01-15T10:30:00.000Z');
+      const rows: RowDataPacket[] = [{ id: 1, name: 'Alice', created_at: testDate }] as RowDataPacket[];
+
+      const result = mysqlUtil.formatAsToon(rows);
+
+      // Should contain the ISO string representation
+      expect(result).toContain('2023-01-15T10:30:00.000Z');
+    });
+
+    it('should handle multiple Date objects in different rows', () => {
+      const date1 = new Date('2023-01-15T10:30:00.000Z');
+      const date2 = new Date('2024-06-20T15:45:30.000Z');
+      const rows: RowDataPacket[] = [
+        { id: 1, name: 'Alice', created_at: date1, updated_at: date1 },
+        { id: 2, name: 'Bob', created_at: date2, updated_at: date2 },
+      ] as RowDataPacket[];
+
+      const result = mysqlUtil.formatAsToon(rows);
+
+      expect(result).toContain('2023-01-15T10:30:00.000Z');
+      expect(result).toContain('2024-06-20T15:45:30.000Z');
+    });
+
+    it('should convert invalid Date objects to null', () => {
+      const invalidDate = new Date('invalid');
+      const rows: RowDataPacket[] = [{ id: 1, name: 'Alice', created_at: invalidDate }] as RowDataPacket[];
+
+      const result = mysqlUtil.formatAsToon(rows);
+
+      // Should contain null for invalid date
+      expect(result).toContain('null');
+      // Should not throw an error
+      expect(typeof result).toBe('string');
+    });
+
+    it('should convert Buffer objects to base64 strings', () => {
+      const buffer = Buffer.from('Hello World');
+      const rows: RowDataPacket[] = [{ id: 1, name: 'Alice', encrypted_data: buffer }] as RowDataPacket[];
+
+      const result = mysqlUtil.formatAsToon(rows);
+
+      // Should contain the base64 representation
+      const expectedBase64 = buffer.toString('base64');
+      expect(result).toContain(expectedBase64);
+    });
+
+    it('should handle Buffer objects with binary data', () => {
+      const buffer = Buffer.from([0x48, 0x65, 0x6c, 0x6c, 0x6f]); // "Hello" in hex
+      const rows: RowDataPacket[] = [{ id: 1, binary_field: buffer }] as RowDataPacket[];
+
+      const result = mysqlUtil.formatAsToon(rows);
+
+      const expectedBase64 = buffer.toString('base64');
+      expect(result).toContain(expectedBase64);
+    });
+
+    it('should handle mixed Date, Buffer, and regular values', () => {
+      const testDate = new Date('2023-01-15T10:30:00.000Z');
+      const buffer = Buffer.from('encrypted');
+      const rows: RowDataPacket[] = [
+        {
+          id: 1,
+          name: 'Alice',
+          email: 'alice@example.com',
+          created_at: testDate,
+          encrypted_field: buffer,
+          is_active: true,
+          age: 30,
+        },
+      ] as RowDataPacket[];
+
+      const result = mysqlUtil.formatAsToon(rows);
+
+      // Should contain all data types properly serialized
+      expect(result).toContain('Alice');
+      expect(result).toContain('alice@example.com');
+      expect(result).toContain('2023-01-15T10:30:00.000Z');
+      expect(result).toContain(buffer.toString('base64'));
+      expect(typeof result).toBe('string');
+      expect(result.length).toBeGreaterThan(0);
+    });
+
+    it('should handle rows with Date and null values together', () => {
+      const testDate = new Date('2023-01-15T10:30:00.000Z');
+      const rows: RowDataPacket[] = [
+        { id: 1, name: 'Alice', created_at: testDate, deleted_at: null },
+        { id: 2, name: 'Bob', created_at: null, deleted_at: testDate },
+      ] as RowDataPacket[];
+
+      const result = mysqlUtil.formatAsToon(rows);
+
+      expect(result).toContain('2023-01-15T10:30:00.000Z');
+      expect(result).toContain('null');
+    });
+
+    it('should handle empty Buffer objects', () => {
+      const emptyBuffer = Buffer.from('');
+      const rows: RowDataPacket[] = [{ id: 1, name: 'Alice', data: emptyBuffer }] as RowDataPacket[];
+
+      const result = mysqlUtil.formatAsToon(rows);
+
+      // Empty buffer should produce empty base64 string
+      expect(typeof result).toBe('string');
+      expect(result.length).toBeGreaterThan(0);
+    });
+
+    it('should preserve other data types unchanged', () => {
+      const rows: RowDataPacket[] = [
+        {
+          id: 1,
+          name: 'Alice',
+          age: 30,
+          is_active: true,
+          balance: 123.45,
+          metadata: { key: 'value' },
+        },
+      ] as RowDataPacket[];
+
+      const result = mysqlUtil.formatAsToon(rows);
+
+      // Should successfully format without errors
+      expect(typeof result).toBe('string');
+      expect(result.length).toBeGreaterThan(0);
+    });
+  });
+
   describe('executeQuery - validation', () => {
     it('should block blacklisted operations', async () => {
       const result = await mysqlUtil.executeQuery('test', 'DROP DATABASE production', 'table');
