@@ -36,7 +36,7 @@ export const COMMANDS_DETAIL: string[] = [
 Parameters:
 - query (required): string - SQL query to execute
 - profile (optional): string - Database profile name (default: configured default profile)
-- format (optional): string - Output format: table, json, or csv (default: table)
+- format (optional): string - Output format: table, json, csv, or toon (default: table)
 
 Example:
 query '{"query":"SELECT * FROM users","profile":"local","format":"table"}'`,

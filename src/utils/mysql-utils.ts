@@ -1,5 +1,6 @@
 import mysql from 'mysql2/promise';
 import type { Connection, FieldPacket, OkPacket, RowDataPacket } from 'mysql2/promise';
+import { encode } from '@toon-format/toon';
 
 import type { Config } from './config-loader.js';
 import { getConnectionOptions } from './config-loader.js';
@@ -183,12 +184,23 @@ export class MySQLUtil {
   }
 
   /**
+   * Format query results as TOON (Token-Oriented Object Notation)
+   */
+  formatAsToon(rows: RowDataPacket[]): string {
+    if (!rows || rows.length === 0) {
+      return '';
+    }
+
+    return encode(rows);
+  }
+
+  /**
    * Validate query and execute if safe
    */
   async executeQuery(
     profileName: string,
     query: string,
-    format: 'table' | 'json' | 'csv' = 'table'
+    format: 'table' | 'json' | 'csv' | 'toon' = 'table'
   ): Promise<QueryResult> {
     // Validate query against blacklist
     const blacklistCheck = checkBlacklist(query, this.config.safety.blacklisted_operations);
@@ -242,6 +254,8 @@ export class MySQLUtil {
           result += this.formatAsJson(rows as RowDataPacket[]);
         } else if (format === 'csv') {
           result += this.formatAsCsv(rows as RowDataPacket[], fields as FieldPacket[]);
+        } else if (format === 'toon') {
+          result += this.formatAsToon(rows as RowDataPacket[]);
         } else {
           result += this.formatAsTable(rows as RowDataPacket[], fields as FieldPacket[]);
         }

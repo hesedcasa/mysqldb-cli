@@ -22,7 +22,7 @@ export class wrapper {
   private rl: readline.Interface;
   private config: Config | null = null;
   private currentProfile: string | null = null;
-  private currentFormat: 'table' | 'json' | 'csv' = 'table';
+  private currentFormat: 'table' | 'json' | 'csv' | 'toon' = 'table';
 
   constructor() {
     this.rl = readline.createInterface({
@@ -103,12 +103,12 @@ export class wrapper {
     }
 
     if (trimmed.startsWith('format ')) {
-      const newFormat = trimmed.substring(7).trim() as 'table' | 'json' | 'csv';
-      if (['table', 'json', 'csv'].includes(newFormat)) {
+      const newFormat = trimmed.substring(7).trim() as 'table' | 'json' | 'csv' | 'toon';
+      if (['table', 'json', 'csv', 'toon'].includes(newFormat)) {
         this.currentFormat = newFormat;
         console.log(`✓ Output format set to: ${newFormat}`);
       } else {
-        console.error('ERROR: Invalid format. Choose: table, json, or csv');
+        console.error('ERROR: Invalid format. Choose: table, json, csv, or toon');
       }
       this.rl.prompt();
       return;
@@ -255,7 +255,7 @@ commands              list all available MySQL commands
 <command> <arg>       run <command> with JSON argument
 profile <name>        switch to a different database profile
 profiles              list all available profiles
-format <type>         set output format (table, json, csv)
+format <type>         set output format (table, json, csv, toon)
 clear                 clear the screen
 exit, quit, q         exit the CLI
 

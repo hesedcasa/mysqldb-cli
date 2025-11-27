@@ -235,6 +235,40 @@ describe('MySQLUtil', () => {
     });
   });
 
+  describe('formatAsToon', () => {
+    it('should format rows as TOON', () => {
+      const rows: RowDataPacket[] = [
+        { id: 1, name: 'Alice', email: 'alice@example.com' },
+        { id: 2, name: 'Bob', email: 'bob@example.com' },
+      ] as RowDataPacket[];
+
+      const result = mysqlUtil.formatAsToon(rows);
+
+      // TOON format should be a string
+      expect(typeof result).toBe('string');
+      // Should contain some representation of the data
+      expect(result.length).toBeGreaterThan(0);
+    });
+
+    it('should return empty string for empty result set', () => {
+      const rows: RowDataPacket[] = [];
+
+      const result = mysqlUtil.formatAsToon(rows);
+
+      expect(result).toBe('');
+    });
+
+    it('should handle NULL values in TOON', () => {
+      const rows: RowDataPacket[] = [{ id: 1, name: 'Alice', email: null }] as RowDataPacket[];
+
+      const result = mysqlUtil.formatAsToon(rows);
+
+      // TOON should still produce output
+      expect(typeof result).toBe('string');
+      expect(result.length).toBeGreaterThan(0);
+    });
+  });
+
   describe('executeQuery - validation', () => {
     it('should block blacklisted operations', async () => {
       const result = await mysqlUtil.executeQuery('test', 'DROP DATABASE production', 'table');
