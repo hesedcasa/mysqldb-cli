@@ -1,17 +1,20 @@
 import {
-  closeConnections,
-  describeTable,
-  executeQuery,
-  explainQuery,
-  listDatabases,
-  listTables,
+  clearClients,
+  createIssue,
+  deleteIssue,
+  getIssue,
+  getProject,
+  getUser,
+  listBoards,
+  listIssues,
+  listProjects,
   loadConfig,
-  showIndexes,
   testConnection,
+  updateIssue,
 } from '../utils/index.js';
 
 /**
- * Execute a MySQL command in headless mode
+ * Execute a Jira API command in headless mode
  * @param command - The command name to execute
  * @param arg - JSON string or null for the command arguments
  */
@@ -34,44 +37,60 @@ export const runCommand = async (
     let result;
 
     switch (command) {
-      case 'query':
-        if (!args.query) {
-          console.error('ERROR: "query" parameter is required');
+      case 'list-projects':
+        result = await listProjects(profile, format);
+        break;
+
+      case 'get-project':
+        if (!args.projectIdOrKey) {
+          console.error('ERROR: "projectIdOrKey" parameter is required');
           process.exit(1);
         }
-        result = await executeQuery(args.query, profile, format);
+        result = await getProject(profile, args.projectIdOrKey, format);
         break;
 
-      case 'list-databases':
-        result = await listDatabases(profile);
+      case 'list-issues':
+        result = await listIssues(profile, args.jql, args.maxResults, args.startAt, format);
         break;
 
-      case 'list-tables':
-        result = await listTables(profile);
-        break;
-
-      case 'describe-table':
-        if (!args.table) {
-          console.error('ERROR: "table" parameter is required');
+      case 'get-issue':
+        if (!args.issueIdOrKey) {
+          console.error('ERROR: "issueIdOrKey" parameter is required');
           process.exit(1);
         }
-        result = await describeTable(profile, args.table, format);
+        result = await getIssue(profile, args.issueIdOrKey, format);
         break;
 
-      case 'show-indexes':
-        if (!args.table) {
-          console.error('ERROR: "table" parameter is required');
+      case 'create-issue':
+        if (!args.fields) {
+          console.error('ERROR: "fields" parameter is required');
           process.exit(1);
         }
-        result = await showIndexes(profile, args.table, format);
+        result = await createIssue(profile, args.fields, format);
         break;
 
-      case 'explain-query':
-        if (!args.query) {
-          console.error('ERROR: "query" parameter is required');
+      case 'update-issue':
+        if (!args.issueIdOrKey || !args.fields) {
+          console.error('ERROR: "issueIdOrKey" and "fields" parameters are required');
           process.exit(1);
         }
-        result = await explainQuery(profile, args.query, format);
+        result = await updateIssue(profile, args.issueIdOrKey, args.fields, format);
+        break;
+
+      case 'delete-issue':
+        if (!args.issueIdOrKey) {
+          console.error('ERROR: "issueIdOrKey" parameter is required');
+          process.exit(1);
+        }
+        result = await deleteIssue(profile, args.issueIdOrKey);
+        break;
+
+      case 'list-boards':
+        result = await listBoards(profile, args.projectIdOrKey, args.type, format);
+        break;
+
+      case 'get-user':
+        result = await getUser(profile, args.accountId, args.username, format);
         break;
 
       case 'test-connection':
@@ -88,18 +107,15 @@ export const runCommand = async (
       console.log(result.result);
     } else {
       console.error(result.error);
-      if ('requiresConfirmation' in result && result.requiresConfirmation) {
-        console.error('\nTo execute destructive operations, use the interactive CLI mode.');
-      }
       process.exit(1);
     }
 
-    // Close all connections
-    await closeConnections();
+    // Clear clients
+    clearClients();
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error('Error executing command:', errorMessage);
-    await closeConnections();
+    clearClients();
     process.exit(1);
   }
 };

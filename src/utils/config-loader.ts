@@ -1,60 +1,51 @@
 import fs from 'fs';
-import type { ConnectionOptions as MySQL2ConnectionOptions } from 'mysql2/promise';
 import path from 'path';
 import yaml from 'yaml';
 
 /**
- * MySQL connection profile configuration
+ * Jira connection profile configuration
  */
-interface MySQLProfile {
+export interface JiraProfile {
   host: string;
-  port: number;
-  user: string;
-  password: string;
-  database: string;
-  ssl?: boolean;
-}
-
-/**
- * Safety configuration for query execution
- */
-interface SafetyConfig {
-  default_limit: number;
-  require_confirmation_for: string[];
-  blacklisted_operations: string[];
+  email: string;
+  apiToken: string;
 }
 
 /**
  * Main configuration structure
  */
 export interface Config {
-  profiles: Record<string, MySQLProfile>;
-  safety: SafetyConfig;
+  profiles: Record<string, JiraProfile>;
   defaultProfile: string;
-  defaultFormat: 'table' | 'json' | 'csv' | 'toon';
+  defaultFormat: 'table' | 'json' | 'toon';
 }
 
 /**
- * MySQL connection options for mysql2 driver
+ * Jira client options for jira.js library
  */
-type ConnectionOptions = Pick<
-  MySQL2ConnectionOptions,
-  'host' | 'port' | 'user' | 'password' | 'database' | 'ssl' | 'connectTimeout' | 'multipleStatements'
->;
+export interface JiraClientOptions {
+  host: string;
+  authentication: {
+    basic: {
+      email: string;
+      apiToken: string;
+    };
+  };
+}
 
 /**
- * Load MySQL connection profiles from .claude/mysql-connector.local.md
+ * Load Jira connection profiles from .claude/jira-connector.local.md
  *
  * @param projectRoot - Project root directory
  * @returns Configuration object with profiles and settings
  */
 export function loadConfig(projectRoot: string): Config {
-  const configPath = path.join(projectRoot, '.claude', 'mysql-connector.local.md');
+  const configPath = path.join(projectRoot, '.claude', 'jira-connector.local.md');
 
   if (!fs.existsSync(configPath)) {
     throw new Error(
       `Configuration file not found at ${configPath}\n` +
-        `Please create .claude/mysql-connector.local.md with your database profiles.`
+        `Please create .claude/jira-connector.local.md with your Jira profiles.`
     );
   }
 
@@ -77,34 +68,39 @@ export function loadConfig(projectRoot: string): Config {
 
   // Validate each profile
   for (const [profileName, profile] of Object.entries(config.profiles)) {
-    const required: Array<keyof MySQLProfile> = ['host', 'port', 'user', 'password', 'database'];
+    const required: Array<keyof JiraProfile> = ['host', 'email', 'apiToken'];
     for (const field of required) {
       if (!profile[field]) {
         throw new Error(`Profile "${profileName}" missing required field: ${field}`);
       }
     }
+
+    // Validate host format
+    if (!profile.host.startsWith('http://') && !profile.host.startsWith('https://')) {
+      throw new Error(`Profile "${profileName}" host must start with http:// or https://`);
+    }
+
+    // Validate email format (basic check)
+    if (!profile.email.includes('@')) {
+      throw new Error(`Profile "${profileName}" email appears to be invalid`);
+    }
   }
 
   return {
     profiles: config.profiles,
-    safety: config.safety || {
-      default_limit: 100,
-      require_confirmation_for: ['DELETE', 'UPDATE', 'DROP', 'TRUNCATE', 'ALTER'],
-      blacklisted_operations: ['DROP DATABASE'],
-    },
     defaultProfile: config.defaultProfile || Object.keys(config.profiles)[0],
-    defaultFormat: config.defaultFormat || 'table',
+    defaultFormat: config.defaultFormat || 'json',
   };
 }
 
 /**
- * Get connection options for a specific profile
+ * Get Jira client options for a specific profile
  *
  * @param config - Configuration object
  * @param profileName - Profile name
- * @returns MySQL connection options
+ * @returns Jira client options for jira.js
  */
-export function getConnectionOptions(config: Config, profileName: string): ConnectionOptions {
+export function getJiraClientOptions(config: Config, profileName: string): JiraClientOptions {
   const profile = config.profiles[profileName];
 
   if (!profile) {
@@ -112,20 +108,13 @@ export function getConnectionOptions(config: Config, profileName: string): Conne
     throw new Error(`Profile "${profileName}" not found. Available profiles: ${availableProfiles}`);
   }
 
-  const options: ConnectionOptions = {
+  return {
     host: profile.host,
-    port: profile.port,
-    user: profile.user,
-    password: profile.password,
-    database: profile.database,
-    connectTimeout: 10000,
-    multipleStatements: false, // Security: prevent SQL injection via multiple statements
+    authentication: {
+      basic: {
+        email: profile.email,
+        apiToken: profile.apiToken,
+      },
+    },
   };
-
-  // Only include SSL if explicitly set to true in profile
-  if (profile.ssl) {
-    options.ssl = {};
-  }
-
-  return options;
 }

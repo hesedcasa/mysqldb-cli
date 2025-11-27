@@ -1,17 +1,20 @@
 /**
- * MySQL CLI Commands Configuration
+ * Jira API CLI Commands Configuration
  */
 
 /**
- * Available MySQL commands
+ * Available Jira API commands
  */
 export const COMMANDS: string[] = [
-  'query',
-  'list-databases',
-  'list-tables',
-  'describe-table',
-  'show-indexes',
-  'explain-query',
+  'list-projects',
+  'get-project',
+  'list-issues',
+  'get-issue',
+  'create-issue',
+  'update-issue',
+  'delete-issue',
+  'list-boards',
+  'get-user',
   'test-connection',
 ];
 
@@ -19,13 +22,16 @@ export const COMMANDS: string[] = [
  * Brief descriptions for each command
  */
 export const COMMANDS_INFO: string[] = [
-  'Execute a SQL query',
-  'List all databases',
-  'List all tables in current database',
-  'Describe table structure',
-  'Show table indexes',
-  'Explain query execution plan',
-  'Test database connection',
+  'List all accessible projects',
+  'Get details of a specific project',
+  'List issues using JQL query',
+  'Get details of a specific issue',
+  'Create a new issue',
+  'Update an existing issue',
+  'Delete an issue',
+  'List agile boards',
+  'Get user information',
+  'Test Jira API connection',
 ];
 
 /**
@@ -34,52 +40,83 @@ export const COMMANDS_INFO: string[] = [
 export const COMMANDS_DETAIL: string[] = [
   `
 Parameters:
-- query (required): string - SQL query to execute
-- profile (optional): string - Database profile name (default: configured default profile)
-- format (optional): string - Output format: table, json, csv, or toon (default: table)
+- profile (optional): string - Jira profile name (default: configured default profile)
+- format (optional): string - Output format: table, json, or toon (default: json)
 
 Example:
-query '{"query":"SELECT * FROM users","profile":"local","format":"table"}'`,
+list-projects '{"profile":"cloud","format":"json"}'`,
   `
 Parameters:
-- profile (optional): string - Database profile name (default: configured default profile)
+- projectIdOrKey (required): string - Project ID or project key
+- profile (optional): string - Jira profile name (default: configured default profile)
+- format (optional): string - Output format: table, json, or toon (default: json)
 
 Example:
-list-databases '{"profile":"local"}'`,
+get-project '{"projectIdOrKey":"PROJ","profile":"cloud","format":"json"}'`,
   `
 Parameters:
-- profile (optional): string - Database profile name (default: configured default profile)
+- jql (optional): string - JQL query to filter issues (default: all issues)
+- maxResults (optional): number - Maximum number of results (default: 50)
+- startAt (optional): number - Starting index for pagination (default: 0)
+- profile (optional): string - Jira profile name (default: configured default profile)
+- format (optional): string - Output format: table, json, or toon (default: json)
 
 Example:
-list-tables '{"profile":"local"}'`,
+list-issues '{"jql":"project = PROJ AND status = Open","maxResults":10,"profile":"cloud","format":"json"}'`,
   `
 Parameters:
-- table (required): string - Table name to describe
-- profile (optional): string - Database profile name (default: configured default profile)
-- format (optional): string - Output format: table, json, or toon (default: table)
+- issueIdOrKey (required): string - Issue ID or issue key
+- profile (optional): string - Jira profile name (default: configured default profile)
+- format (optional): string - Output format: table, json, or toon (default: json)
 
 Example:
-describe-table '{"table":"users","profile":"local","format":"json"}'`,
+get-issue '{"issueIdOrKey":"PROJ-123","profile":"cloud","format":"json"}'`,
   `
 Parameters:
-- table (required): string - Table name to show indexes for
-- profile (optional): string - Database profile name (default: configured default profile)
-- format (optional): string - Output format: table, json, or toon (default: table)
+- fields (required): object - Issue fields including summary, project, issuetype, etc.
+- profile (optional): string - Jira profile name (default: configured default profile)
+- format (optional): string - Output format: table, json, or toon (default: json)
 
 Example:
-show-indexes '{"table":"users","profile":"local","format":"json"}'`,
+create-issue '{"fields":{"summary":"New issue","project":{"key":"PROJ"},"issuetype":{"name":"Task"}},"profile":"cloud","format":"json"}'`,
   `
 Parameters:
-- query (required): string - SQL query to explain
-- profile (optional): string - Database profile name (default: configured default profile)
-- format (optional): string - Output format: table, json, or toon (default: table)
+- issueIdOrKey (required): string - Issue ID or issue key to update
+- fields (required): object - Issue fields to update
+- profile (optional): string - Jira profile name (default: configured default profile)
+- format (optional): string - Output format: table, json, or toon (default: json)
 
 Example:
-explain-query '{"query":"SELECT * FROM users WHERE id = 1","profile":"local","format":"json"}'`,
+update-issue '{"issueIdOrKey":"PROJ-123","fields":{"summary":"Updated summary"},"profile":"cloud","format":"json"}'`,
   `
 Parameters:
-- profile (optional): string - Database profile name (default: configured default profile)
+- issueIdOrKey (required): string - Issue ID or issue key to delete
+- profile (optional): string - Jira profile name (default: configured default profile)
 
 Example:
-test-connection '{"profile":"local"}'`,
+delete-issue '{"issueIdOrKey":"PROJ-123","profile":"cloud"}'`,
+  `
+Parameters:
+- projectIdOrKey (optional): string - Filter boards by project
+- type (optional): string - Board type (scrum, kanban, simple)
+- profile (optional): string - Jira profile name (default: configured default profile)
+- format (optional): string - Output format: table, json, or toon (default: json)
+
+Example:
+list-boards '{"projectIdOrKey":"PROJ","type":"scrum","profile":"cloud","format":"json"}'`,
+  `
+Parameters:
+- accountId (optional): string - User account ID
+- username (optional): string - Username (deprecated, use accountId)
+- profile (optional): string - Jira profile name (default: configured default profile)
+- format (optional): string - Output format: table, json, or toon (default: json)
+
+Example:
+get-user '{"accountId":"5b10a2844c20165700ede21g","profile":"cloud","format":"json"}'`,
+  `
+Parameters:
+- profile (optional): string - Jira profile name (default: configured default profile)
+
+Example:
+test-connection '{"profile":"cloud"}'`,
 ];

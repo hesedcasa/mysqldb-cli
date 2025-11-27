@@ -1,0 +1,102 @@
+---
+profiles:
+  cloud:
+    host: https://your-domain.atlassian.net
+    email: your-email@example.com
+    apiToken: YOUR_API_TOKEN_HERE
+
+defaultProfile: cloud
+defaultFormat: json
+---
+
+# Jira API Configuration
+
+This file contains Jira API connection profiles for the Jira CLI tool.
+
+## Setup Instructions
+
+1. **Create your API token:**
+   - Go to https://id.atlassian.com/manage-profile/security/api-tokens
+   - Click "Create API token"
+   - Give it a label (e.g., "Jira CLI")
+   - Copy the generated token
+
+2. **Copy this file:**
+   ```bash
+   cp .claude/jira-connector.local.md.example .claude/jira-connector.local.md
+   ```
+
+3. **Edit `.claude/jira-connector.local.md`:**
+   - Replace `https://your-domain.atlassian.net` with your Jira Cloud instance URL
+   - Replace `your-email@example.com` with your Atlassian account email
+   - Replace `YOUR_API_TOKEN_HERE` with the API token you created
+
+## Configuration Options
+
+### Profile Fields
+
+- **host** (required): Your Jira Cloud instance URL (must start with https://)
+- **email** (required): Your Atlassian account email address
+- **apiToken** (required): Your Jira API token
+
+### Global Settings
+
+- **defaultProfile** (optional): Which profile to use by default (defaults to first profile)
+- **defaultFormat** (optional): Default output format - `table`, `json`, or `toon` (defaults to `json`)
+
+## Multiple Profiles Example
+
+You can configure multiple profiles for different Jira instances:
+
+```yaml
+---
+profiles:
+  production:
+    host: https://company.atlassian.net
+    email: user@company.com
+    apiToken: prod_token_here
+
+  staging:
+    host: https://company-staging.atlassian.net
+    email: user@company.com
+    apiToken: staging_token_here
+
+  personal:
+    host: https://myproject.atlassian.net
+    email: personal@email.com
+    apiToken: personal_token_here
+
+defaultProfile: production
+defaultFormat: json
+---
+```
+
+## Security Notes
+
+⚠️ **Important Security Information:**
+
+1. **Never commit** `.claude/jira-connector.local.md` to version control
+2. The `.gitignore` should include `*.local.md` to prevent accidental commits
+3. Keep your API tokens secure and rotate them periodically
+4. Use different API tokens for different environments
+
+## Usage
+
+Once configured, you can:
+
+1. **Interactive mode:**
+   ```bash
+   npm start
+   ```
+
+2. **Headless mode:**
+   ```bash
+   npx jira-cli list-projects
+   npx jira-cli get-issue '{"issueIdOrKey":"PROJ-123"}'
+   ```
+
+3. **Switch profiles in interactive mode:**
+   ```
+   jira> profile staging
+   jira> list-projects
+   ```

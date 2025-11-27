@@ -1,10 +1,10 @@
 {
-  "name": "mysqldb-cli",
-  "version": "1.2.0",
-  "description": "A powerful command-line interface for MySQL database interaction with built-in safety features and multiple output formats",
+  "name": "jira-api-cli",
+  "version": "2.0.0",
+  "description": "A powerful command-line interface for Jira API interaction with support for issues, projects, boards, and multiple output formats",
   "main": "dist/index.js",
   "bin": {
-    "mysqldb-cli": "dist/index.js"
+    "jira-cli": "dist/index.js"
   },
   "type": "module",
   "scripts": {
@@ -22,16 +22,17 @@
     "pre-commit": "npm run format && npm run find-deadcode"
   },
   "keywords": [
-    "mysql",
+    "jira",
     "cli",
     "ai-agents",
-    "database"
+    "api",
+    "atlassian"
   ],
   "author": "Hesed",
   "license": "Apache-2.0",
   "dependencies": {
     "@toon-format/toon": "^2.0.0",
-    "mysql2": "^3.15.3",
+    "jira.js": "^4.0.1",
     "yaml": "^2.8.1"
   },
   "devDependencies": {
@@ -52,11 +53,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hesedcasa/mysqldb-cli.git"
+    "url": "git+https://github.com/hesedcasa/jira-api-cli.git"
   },
   "types": "./dist/index.d.ts",
   "bugs": {
-    "url": "https://github.com/hesedcasa/mysqldb-cli/issues"
+    "url": "https://github.com/hesedcasa/jira-api-cli/issues"
   },
-  "homepage": "https://github.com/hesedcasa/mysqldb-cli#readme"
+  "homepage": "https://github.com/hesedcasa/jira-api-cli#readme"
 }

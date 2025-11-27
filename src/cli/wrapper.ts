@@ -3,32 +3,35 @@ import readline from 'readline';
 import { getCurrentVersion, printAvailableCommands, printCommandDetail } from '../commands/index.js';
 import { COMMANDS } from '../config/index.js';
 import {
-  closeConnections,
-  describeTable,
-  executeQuery,
-  explainQuery,
-  listDatabases,
-  listTables,
+  clearClients,
+  createIssue,
+  deleteIssue,
+  getIssue,
+  getProject,
+  getUser,
+  listBoards,
+  listIssues,
+  listProjects,
   loadConfig,
-  showIndexes,
   testConnection,
+  updateIssue,
 } from '../utils/index.js';
 import type { Config } from '../utils/index.js';
 
 /**
- * Main CLI class for MySQL database interaction
+ * Main CLI class for Jira API interaction
  */
 export class wrapper {
   private rl: readline.Interface;
   private config: Config | null = null;
   private currentProfile: string | null = null;
-  private currentFormat: 'table' | 'json' | 'csv' | 'toon' = 'table';
+  private currentFormat: 'table' | 'json' | 'toon' = 'json';
 
   constructor() {
     this.rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
-      prompt: 'mysql> ',
+      prompt: 'jira> ',
     });
   }
 
@@ -47,8 +50,8 @@ export class wrapper {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error('Failed to load configuration:', errorMessage);
       console.error('\nMake sure:');
-      console.error('1. .claude/mysql-connector.local.md exists');
-      console.error('2. The file contains valid database profiles in YAML frontmatter');
+      console.error('1. .claude/jira-connector.local.md exists');
+      console.error('2. The file contains valid Jira profiles in YAML frontmatter');
       process.exit(1);
     }
   }
@@ -103,12 +106,12 @@ export class wrapper {
     }
 
     if (trimmed.startsWith('format ')) {
-      const newFormat = trimmed.substring(7).trim() as 'table' | 'json' | 'csv' | 'toon';
-      if (['table', 'json', 'csv', 'toon'].includes(newFormat)) {
+      const newFormat = trimmed.substring(7).trim() as 'table' | 'json' | 'toon';
+      if (['table', 'json', 'toon'].includes(newFormat)) {
         this.currentFormat = newFormat;
         console.log(`✓ Output format set to: ${newFormat}`);
       } else {
-        console.error('ERROR: Invalid format. Choose: table, json, csv, or toon');
+        console.error('ERROR: Invalid format. Choose: table, json, or toon');
       }
       this.rl.prompt();
       return;
@@ -141,7 +144,7 @@ export class wrapper {
   }
 
   /**
-   * Runs a MySQL command
+   * Runs a Jira API command
    * @param command - The command name to execute
    * @param arg - JSON string or null for the command arguments
    */
@@ -161,48 +164,65 @@ export class wrapper {
       let result;
 
       switch (command) {
-        case 'query':
-          if (!args.query) {
-            console.error('ERROR: "query" parameter is required');
+        case 'list-projects':
+          result = await listProjects(profile, format);
+          break;
+
+        case 'get-project':
+          if (!args.projectIdOrKey) {
+            console.error('ERROR: "projectIdOrKey" parameter is required');
             this.rl.prompt();
             return;
           }
-          result = await executeQuery(args.query, profile, format);
+          result = await getProject(profile, args.projectIdOrKey, format);
           break;
 
-        case 'list-databases':
-          result = await listDatabases(profile);
+        case 'list-issues':
+          result = await listIssues(profile, args.jql, args.maxResults, args.startAt, format);
           break;
 
-        case 'list-tables':
-          result = await listTables(profile);
-          break;
-
-        case 'describe-table':
-          if (!args.table) {
-            console.error('ERROR: "table" parameter is required');
+        case 'get-issue':
+          if (!args.issueIdOrKey) {
+            console.error('ERROR: "issueIdOrKey" parameter is required');
             this.rl.prompt();
             return;
           }
-          result = await describeTable(profile, args.table, format);
+          result = await getIssue(profile, args.issueIdOrKey, format);
           break;
 
-        case 'show-indexes':
-          if (!args.table) {
-            console.error('ERROR: "table" parameter is required');
+        case 'create-issue':
+          if (!args.fields) {
+            console.error('ERROR: "fields" parameter is required');
             this.rl.prompt();
             return;
           }
-          result = await showIndexes(profile, args.table, format);
+          result = await createIssue(profile, args.fields, format);
           break;
 
-        case 'explain-query':
-          if (!args.query) {
-            console.error('ERROR: "query" parameter is required');
+        case 'update-issue':
+          if (!args.issueIdOrKey || !args.fields) {
+            console.error('ERROR: "issueIdOrKey" and "fields" parameters are required');
             this.rl.prompt();
             return;
           }
-          result = await explainQuery(profile, args.query, format);
+          result = await updateIssue(profile, args.issueIdOrKey, args.fields, format);
+          break;
+
+        case 'delete-issue':
+          if (!args.issueIdOrKey) {
+            console.error('ERROR: "issueIdOrKey" parameter is required');
+            this.rl.prompt();
+            return;
+          }
+          result = await deleteIssue(profile, args.issueIdOrKey);
+          break;
+
+        case 'list-boards':
+          result = await listBoards(profile, args.projectIdOrKey, args.type, format);
+          break;
+
+        case 'get-user':
+          result = await getUser(profile, args.accountId, args.username, format);
           break;
 
         case 'test-connection':
@@ -220,9 +240,6 @@ export class wrapper {
         console.log('\n' + result.result);
       } else {
         console.error('\n' + result.error);
-        if ('requiresConfirmation' in result && result.requiresConfirmation) {
-          console.log('\nNote: This operation requires confirmation.');
-        }
       }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -242,7 +259,7 @@ export class wrapper {
     const commandList = COMMANDS.join(', ');
 
     console.log(`
-MySQL CLI v${version}
+Jira API CLI v${version}
 
 Current Settings:
   Profile: ${currentProfile}
@@ -250,12 +267,12 @@ Current Settings:
 
 Usage:
 
-commands              list all available MySQL commands
+commands              list all available Jira API commands
 <command> -h          quick help on <command>
 <command> <arg>       run <command> with JSON argument
-profile <name>        switch to a different database profile
+profile <name>        switch to a different Jira profile
 profiles              list all available profiles
-format <type>         set output format (table, json, csv, toon)
+format <type>         set output format (table, json, toon)
 clear                 clear the screen
 exit, quit, q         exit the CLI
 
@@ -264,9 +281,11 @@ All commands:
 ${commandList}
 
 Examples:
-  query {"query":"SELECT * FROM users LIMIT 5"}
-  describe-table {"table":"users"}
-  list-databases
+  list-projects
+  get-project {"projectIdOrKey":"PROJ"}
+  list-issues {"jql":"project = PROJ AND status = Open","maxResults":10}
+  get-issue {"issueIdOrKey":"PROJ-123"}
+  create-issue {"fields":{"summary":"New task","project":{"key":"PROJ"},"issuetype":{"name":"Task"}}}
   test-connection
 
 `);
@@ -283,7 +302,7 @@ Examples:
     });
 
     this.rl.on('close', async () => {
-      await closeConnections();
+      clearClients();
       process.exit(0);
     });
 
@@ -305,11 +324,11 @@ Examples:
   }
 
   /**
-   * Disconnects from the database and closes the CLI
+   * Disconnects from Jira and closes the CLI
    */
   private async disconnect(): Promise<void> {
-    console.log('\nClosing database connections...');
-    await closeConnections();
+    console.log('\nClosing Jira connections...');
+    clearClients();
     this.rl.close();
   }
 }

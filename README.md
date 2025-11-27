@@ -1,471 +1,373 @@
-# MySQL CLI
+# Jira API CLI
 
-[![npm mysqldb-cli package](https://img.shields.io/npm/v/mysqldb-cli.svg)](https://npmjs.org/package/mysqldb-cli)
+[![npm jira-api-cli package](https://img.shields.io/npm/v/jira-api-cli.svg)](https://npmjs.org/package/jira-api-cli)
 
-A powerful command-line interface for MySQL database interaction with built-in safety features and multiple output formats.
+A powerful command-line interface for Jira API interaction with support for issues, projects, boards, and multiple output formats.
 
 ## Features
 
-- 💻 **Interactive REPL** for database exploration and queries
-- 🚀 **Headless mode** for one-off command execution
-- 🔐 **Multi-profile support** for managing different database connections
-- 📊 **Multiple output formats**: table, JSON, CSV or TOON
-- 🛡️ **Safety features** for destructive operations (DELETE, UPDATE, DROP, etc.)
-- 🔧 **Database introspection** tools (list databases/tables, describe schema, show indexes)
-- ⚡ **Query execution** with EXPLAIN support
+- 💻 **Interactive REPL** for Jira exploration and management
+- 🚀 **Headless mode** for one-off command execution and automation
+- 🔐 **Multi-profile support** for managing different Jira instances
+- 📊 **Multiple output formats**: table, JSON, or TOON
+- 🎯 **Issue management**: create, read, update, delete issues
+- 📋 **Project operations**: list and view project details
+- 🔍 **JQL query support** for advanced issue searching
+- 👤 **User management**: retrieve user information
+- 📊 **Board support**: list agile boards (coming soon)
 - ✅ **Connection testing** for quick diagnostics
 
 ## Requirements
 
-- [Node.js](https://nodejs.org/) v22.0 or newer
+- [Node.js](https://nodejs.org/) v20.0 or newer
 - [npm](https://www.npmjs.com/)
-- MySQL 5.7+ or MySQL 8.0+
+- Jira Cloud account with API access
 
 ## Installation
 
 ```bash
-npm install -g mysqldb-cli
+npm install -g jira-api-cli
 ```
 
 ## Configuration
 
-Create a configuration file at `.claude/mysql-connector.local.md` in your project root:
+### Step 1: Create API Token
+
+1. Go to [Atlassian API Tokens](https://id.atlassian.com/manage-profile/security/api-tokens)
+2. Click "Create API token"
+3. Give it a label (e.g., "Jira CLI")
+4. Copy the generated token
+
+### Step 2: Create Configuration File
+
+Create a configuration file at `.claude/jira-connector.local.md` in your project root:
 
 ```markdown
 ---
 profiles:
-  local:
-    host: localhost
-    port: 3306
-    user: root
-    password: password
-    database: mydb
+  cloud:
+    host: https://your-domain.atlassian.net
+    email: your-email@example.com
+    apiToken: YOUR_API_TOKEN_HERE
 
-  production:
-    host: prod.example.com
-    port: 3306
-    user: app_user
-    password: secure_password
-    database: production_db
-    ssl: true
-
-safety:
-  default_limit: 100
-  require_confirmation_for:
-    - DELETE
-    - UPDATE
-    - DROP
-    - TRUNCATE
-    - ALTER
-  blacklisted_operations:
-    - DROP DATABASE
-
-defaultProfile: local
-defaultFormat: table
+defaultProfile: cloud
+defaultFormat: json
 ---
 
-# MySQL Connection Profiles
+# Jira API Configuration
 
-This file stores your MySQL database connection profiles.
+This file stores your Jira API connection profiles.
 ```
 
 ### Configuration Options
 
-- **profiles**: Named database connection profiles
-  - `host`: Database server hostname or IP
-  - `port`: MySQL port (default: 3306)
-  - `user`: Database username
-  - `password`: Database password
-  - `database`: Default database name
-  - `ssl`: Enable SSL connection (optional)
-
-- **safety**: Query safety settings
-  - `default_limit`: Default row limit for SELECT queries
-  - `require_confirmation_for`: Operations requiring confirmation in interactive mode
-  - `blacklisted_operations`: Completely blocked operations
+- **profiles**: Named Jira connection profiles
+  - `host`: Your Jira Cloud instance URL (must start with https://)
+  - `email`: Your Atlassian account email
+  - `apiToken`: Your Jira API token
 
 - **defaultProfile**: Profile name to use when none specified
-- **defaultFormat**: Default output format (`table`, `json`, `csv` or `toon`)
+- **defaultFormat**: Default output format (`table`, `json`, or `toon`)
+
+### Multiple Profiles Example
+
+```yaml
+---
+profiles:
+  production:
+    host: https://company.atlassian.net
+    email: user@company.com
+    apiToken: prod_token_here
+
+  staging:
+    host: https://company-staging.atlassian.net
+    email: user@company.com
+    apiToken: staging_token_here
+
+defaultProfile: production
+defaultFormat: json
+---
+```
 
 ## Quick Start
 
 ### Interactive Mode
 
-Start the CLI and interact with MySQL through a REPL:
+Start the CLI and interact with Jira through a REPL:
 
 ```bash
-npx mysqldb-cli
+npx jira-cli
 ```
 
-Once started, you'll see the `mysql>` prompt:
+Once started, you'll see the `jira>` prompt:
 
 ```
-MySQL CLI v1.0.0
-Connected to profile: local
-
-Usage:
-
-commands         list all available commands
-<command> -h     quick help on <command>
-<command> <arg>  run <command> with argument
-clear            clear the screen
-exit, quit, q    exit the CLI
-
-mysql> commands
-Available commands:
-  query              Execute a SQL query
-  list-databases     List all databases
-  list-tables        List all tables in current database
-  describe-table     Describe table structure
-  show-indexes       Show table indexes
-  explain-query      Explain query execution plan
-  test-connection    Test database connection
-
-mysql> list-tables
-Tables in database 'mydb':
-  - users
-  - posts
-  - comments
-
-mysql> describe-table '{"table":"users"}'
-Table: users
-┌────────────┬──────────────┬──────┬─────┬─────────┬──────────────────┐
-│ Field      │ Type         │ Null │ Key │ Default │ Extra            │
-├────────────┼──────────────┼──────┼─────┼─────────┼──────────────────┤
-│ id         │ int          │ NO   │ PRI │ NULL    │ auto_increment   │
-│ username   │ varchar(50)  │ NO   │ UNI │ NULL    │                  │
-│ email      │ varchar(100) │ NO   │ UNI │ NULL    │                  │
-│ created_at │ timestamp    │ YES  │     │ NULL    │                  │
-└────────────┴──────────────┴──────┴─────┴─────────┴──────────────────┘
-
-mysql> query '{"query":"SELECT * FROM users LIMIT 5"}'
-┌────┬──────────┬────────────────────┬─────────────────────┐
-│ id │ username │ email              │ created_at          │
-├────┼──────────┼────────────────────┼─────────────────────┤
-│ 1  │ alice    │ alice@example.com  │ 2025-01-15 10:30:00 │
-│ 2  │ bob      │ bob@example.com    │ 2025-01-16 14:20:00 │
-│ 3  │ charlie  │ charlie@example.com│ 2025-01-17 09:15:00 │
-└────┴──────────┴────────────────────┴─────────────────────┘
-
-mysql> exit
+jira> list-projects
+jira> get-issue {"issueIdOrKey":"PROJ-123"}
+jira> list-issues {"jql":"project = PROJ AND status = Open","maxResults":10}
 ```
 
 ### Headless Mode
 
-Execute single commands without starting the interactive REPL:
+Execute single commands directly:
 
 ```bash
-# General format
-npx mysqldb-cli <command> '<json_arguments>'
+# Test connection
+npx jira-cli test-connection
 
-# Examples
-npx mysqldb-cli test-connection '{"profile":"local"}'
-npx mysqldb-cli list-databases
-npx mysqldb-cli list-tables '{"profile":"production"}'
-npx mysqldb-cli describe-table '{"table":"users"}'
-npx mysqldb-cli query '{"query":"SELECT COUNT(*) FROM users","format":"json"}'
-npx mysqldb-cli explain-query '{"query":"SELECT * FROM users WHERE id = 1"}'
-```
+# List all projects
+npx jira-cli list-projects
 
-### Command Line Options
+# Get issue details
+npx jira-cli get-issue '{"issueIdOrKey":"PROJ-123"}'
 
-```bash
-# Show version
-npx mysqldb-cli --version
-npx mysqldb-cli -v
+# List issues with JQL
+npx jira-cli list-issues '{"jql":"project = PROJ AND status = Open","maxResults":10}'
 
-# List all commands
-npx mysqldb-cli --commands
-
-# Get help for specific command
-npx mysqldb-cli query -h
-npx mysqldb-cli describe-table -h
-
-# General help
-npx mysqldb-cli --help
-npx mysqldb-cli -h
+# Create a new issue
+npx jira-cli create-issue '{"fields":{"summary":"New bug","project":{"key":"PROJ"},"issuetype":{"name":"Bug"}}}'
 ```
 
 ## Available Commands
 
-The CLI provides **7 MySQL database commands**:
+### Project Commands
 
-### query
+- **list-projects** - List all accessible projects
+  ```bash
+  jira> list-projects
+  jira> list-projects {"format":"table"}
+  ```
 
-Execute a SQL query on the database.
+- **get-project** - Get details of a specific project
+  ```bash
+  jira> get-project {"projectIdOrKey":"PROJ"}
+  ```
 
-**Parameters:**
+### Issue Commands
 
-- `query` (required): string - SQL query to execute
-- `profile` (optional): string - Database profile name (default: configured default profile)
-- `format` (optional): string - Output format: `table`, `json`, `csv` or `toon` (default: `table`)
+- **list-issues** - List issues using JQL query
+  ```bash
+  jira> list-issues
+  jira> list-issues {"jql":"project = PROJ AND status = Open"}
+  jira> list-issues {"jql":"assignee = currentUser()","maxResults":20}
+  ```
 
-**Examples:**
+- **get-issue** - Get details of a specific issue
+  ```bash
+  jira> get-issue {"issueIdOrKey":"PROJ-123"}
+  ```
 
-```bash
-# Interactive mode
-mysql> query '{"query":"SELECT * FROM users LIMIT 10"}'
-mysql> query '{"query":"SELECT * FROM users","format":"json"}'
-mysql> query '{"query":"SELECT * FROM users","profile":"production","format":"csv"}'
+- **create-issue** - Create a new issue
+  ```bash
+  jira> create-issue {"fields":{"summary":"New task","project":{"key":"PROJ"},"issuetype":{"name":"Task"}}}
+  ```
 
-# Headless mode
-npx mysqldb-cli query '{"query":"SELECT * FROM users LIMIT 10"}'
-npx mysqldb-cli query '{"query":"SELECT COUNT(*) FROM posts","format":"json"}'
-```
+- **update-issue** - Update an existing issue
+  ```bash
+  jira> update-issue {"issueIdOrKey":"PROJ-123","fields":{"summary":"Updated summary"}}
+  ```
 
-### list-databases
+- **delete-issue** - Delete an issue
+  ```bash
+  jira> delete-issue {"issueIdOrKey":"PROJ-123"}
+  ```
 
-List all databases accessible with the current credentials.
+### User Commands
 
-**Parameters:**
+- **get-user** - Get user information
+  ```bash
+  jira> get-user
+  jira> get-user {"accountId":"5b10a2844c20165700ede21g"}
+  ```
 
-- `profile` (optional): string - Database profile name (default: configured default profile)
+### Board Commands
 
-**Examples:**
+- **list-boards** - List agile boards (experimental)
+  ```bash
+  jira> list-boards
+  jira> list-boards {"projectIdOrKey":"PROJ","type":"scrum"}
+  ```
 
-```bash
-# Interactive mode
-mysql> list-databases
-mysql> list-databases '{"profile":"production"}'
+### Utility Commands
 
-# Headless mode
-npx mysqldb-cli list-databases
-npx mysqldb-cli list-databases '{"profile":"production"}'
-```
+- **test-connection** - Test Jira API connection
+  ```bash
+  jira> test-connection
+  ```
 
-### list-tables
+## Interactive Mode Commands
 
-List all tables in the current database.
+Special commands available in the REPL:
 
-**Parameters:**
-
-- `profile` (optional): string - Database profile name (default: configured default profile)
-
-**Examples:**
-
-```bash
-# Interactive mode
-mysql> list-tables
-mysql> list-tables '{"profile":"local"}'
-
-# Headless mode
-npx mysqldb-cli list-tables
-npx mysqldb-cli list-tables '{"profile":"production"}'
-```
-
-### describe-table
-
-Show the structure of a specific table (columns, types, keys, etc.).
-
-**Parameters:**
-
-- `table` (required): string - Table name to describe
-- `profile` (optional): string - Database profile name (default: configured default profile)
-- `format` (optional): string - Output format: `table`, `json`, or `toon` (default: `table`)
-
-**Examples:**
-
-```bash
-# Interactive mode
-mysql> describe-table '{"table":"users","format":"json"}'
-mysql> describe-table '{"table":"posts","profile":"production"}'
-
-# Headless mode
-npx mysqldb-cli describe-table '{"table":"users","format":"toon"}'
-npx mysqldb-cli describe-table '{"table":"orders","profile":"production"}'
-```
-
-### show-indexes
-
-Display all indexes for a specific table.
-
-**Parameters:**
-
-- `table` (required): string - Table name to show indexes for
-- `profile` (optional): string - Database profile name (default: configured default profile)
-- `format` (optional): string - Output format: `table`, `json`, or `toon` (default: `table`)
-
-**Examples:**
-
-```bash
-# Interactive mode
-mysql> show-indexes '{"table":"users","format":"json"}'
-mysql> show-indexes '{"table":"posts","profile":"local"}'
-
-# Headless mode
-npx mysqldb-cli show-indexes '{"table":"users","format":"toon"}'
-npx mysqldb-cli show-indexes '{"table":"orders","profile":"production"}'
-```
-
-### explain-query
-
-Show the execution plan for a SQL query (useful for performance optimization).
-
-**Parameters:**
-
-- `query` (required): string - SQL query to explain
-- `profile` (optional): string - Database profile name (default: configured default profile)
-- `format` (optional): string - Output format: `table`, `json`, or `toon` (default: `table`)
-
-**Examples:**
-
-```bash
-# Interactive mode
-mysql> explain-query '{"query":"SELECT * FROM users WHERE email = 'alice@example.com'","format":"json"}'
-mysql> explain-query '{"query":"SELECT u.*, p.* FROM users u JOIN posts p ON u.id = p.user_id"}'
-
-# Headless mode
-npx mysqldb-cli explain-query '{"query":"SELECT * FROM users WHERE id = 1","format":"toon"}'
-npx mysqldb-cli explain-query '{"query":"SELECT * FROM orders WHERE created_at > NOW() - INTERVAL 7 DAY"}'
-```
-
-### test-connection
-
-Test the connection to a specific database profile.
-
-**Parameters:**
-
-- `profile` (optional): string - Database profile name (default: configured default profile)
-
-**Examples:**
-
-```bash
-# Interactive mode
-mysql> test-connection
-mysql> test-connection '{"profile":"production"}'
-
-# Headless mode
-npx mysqldb-cli test-connection
-npx mysqldb-cli test-connection '{"profile":"production"}'
-```
+- **commands** - List all available commands
+- **help** or **?** - Show help message
+- **profile \<name\>** - Switch to a different profile
+- **profiles** - List all available profiles
+- **format \<type\>** - Set output format (table, json, toon)
+- **clear** - Clear the screen
+- **exit**, **quit**, or **q** - Exit the CLI
 
 ## Output Formats
 
-### Table Format (default)
+### Table Format
 
-Human-readable table output with aligned columns:
+Human-readable table format:
 
-```
-┌────┬──────────┬───────────────────┐
-│ id │ username │ email             │
-├────┼──────────┼───────────────────┤
-│ 1  │ alice    │ alice@example.com │
-└────┴──────────┴───────────────────┘
+```bash
+jira> format table
+jira> list-projects
 ```
 
 ### JSON Format
 
-Machine-readable JSON output:
-
-```json
-{
-  "success": true,
-  "result": [
-    {
-      "id": 1,
-      "username": "alice",
-      "email": "alice@example.com"
-    }
-  ],
-  "rowCount": 1
-}
-```
-
-### CSV Format
-
-Comma-separated values for spreadsheet import:
-
-```csv
-id,username,email
-1,alice,alice@example.com
-2,bob,bob@example.com
-```
-
-## Safety Features
-
-The CLI includes built-in safety features to prevent accidental data loss:
-
-1. **Confirmation Required**: Destructive operations (DELETE, UPDATE, DROP, TRUNCATE, ALTER) require confirmation in interactive mode
-2. **Blacklisted Operations**: Certain dangerous operations (like DROP DATABASE) are completely blocked
-3. **No Multiple Statements**: Prevents SQL injection via multiple statement execution
-4. **Connection Timeout**: 10-second timeout prevents hanging connections
-5. **Query Validation**: Validates queries before execution
-
-## Use Cases
-
-### Database Exploration
+Machine-readable JSON format (default):
 
 ```bash
-# Start the CLI
-npx mysqldb-cli
-
-# Explore the database
-mysql> list-databases
-mysql> list-tables
-mysql> describe-table '{"table":"users"}'
-mysql> show-indexes '{"table":"users"}'
+jira> format json
+jira> list-projects
 ```
 
-### Quick Queries
+### TOON Format
+
+[Token-Oriented Object Notation](https://github.com/toon-format/toon) for AI-optimized output:
 
 ```bash
-# Check user count
-npx mysqldb-cli query '{"query":"SELECT COUNT(*) as total FROM users"}'
-
-# Get recent orders
-npx mysqldb-cli query '{"query":"SELECT * FROM orders ORDER BY created_at DESC LIMIT 10"}'
-
-# Export data as JSON
-npx mysqldb-cli query '{"query":"SELECT * FROM products","format":"json"}' > products.json
+jira> format toon
+jira> list-issues
 ```
 
-### Query Optimization
+## Security
 
-```bash
-# Analyze query performance
-mysql> explain-query '{"query":"SELECT * FROM users WHERE email = 'test@example.com'"}'
+⚠️ **Important Security Notes:**
 
-# Check if indexes are being used
-mysql> show-indexes '{"table":"users"}'
-```
-
-### Multi-Environment Management
-
-```bash
-# Test production connection
-npx mysqldb-cli test-connection '{"profile":"production"}'
-
-# Compare table structures
-npx mysqldb-cli describe-table '{"table":"users","profile":"local"}'
-npx mysqldb-cli describe-table '{"table":"users","profile":"production"}'
-
-# Check production data
-npx mysqldb-cli query '{"query":"SELECT COUNT(*) FROM users","profile":"production"}'
-```
+1. **Never commit** `.claude/jira-connector.local.md` to version control
+2. Add `*.local.md` to your `.gitignore`
+3. Keep your API tokens secure and rotate them periodically
+4. Use different API tokens for different environments
+5. API tokens have the same permissions as your user account
 
 ## Development
 
-See [CLAUDE.md](./CLAUDE.md) for detailed development instructions.
+### Build from Source
 
 ```bash
+# Clone repository
+git clone https://github.com/hesedcasa/jira-api-cli.git
+cd jira-api-cli
+
 # Install dependencies
 npm install
 
-# Build the project
+# Build
 npm run build
 
 # Run in development mode
-npm run dev
-
-# Run tests
-npm test
-npm run test:watch
-npm run test:coverage
-
-# Format code
-npm run format
+npm start
 ```
+
+### Run Tests
+
+```bash
+npm test                    # Run all tests once
+npm run test:watch          # Run tests in watch mode
+npm run test:coverage       # Run tests with coverage
+```
+
+### Code Quality
+
+```bash
+npm run format              # Format code with ESLint and Prettier
+npm run find-deadcode       # Find unused exports
+npm run pre-commit          # Run format + find-deadcode
+```
+
+## Examples
+
+### Basic Workflow
+
+```bash
+# Start interactive mode
+npx jira-cli
+
+# List all projects
+jira> list-projects
+
+# Find open issues
+jira> list-issues {"jql":"status = Open","maxResults":10}
+
+# Get specific issue
+jira> get-issue {"issueIdOrKey":"PROJ-123"}
+
+# Update issue
+jira> update-issue {"issueIdOrKey":"PROJ-123","fields":{"assignee":{"accountId":"123456"}}}
+
+# Create new issue
+jira> create-issue {"fields":{"summary":"Fix login bug","project":{"key":"PROJ"},"issuetype":{"name":"Bug"},"priority":{"name":"High"}}}
+```
+
+### Automation Scripts
+
+```bash
+#!/bin/bash
+# Get all high priority bugs
+npx jira-cli list-issues '{"jql":"priority = High AND type = Bug","maxResults":100}' > bugs.json
+
+# Test connection
+npx jira-cli test-connection
+
+# Create issue from script
+npx jira-cli create-issue '{
+  "fields": {
+    "summary": "Automated issue creation",
+    "project": {"key": "PROJ"},
+    "issuetype": {"name": "Task"},
+    "description": "Created via automation script"
+  }
+}'
+```
+
+## Troubleshooting
+
+### Connection Issues
+
+```bash
+# Test your connection
+npx jira-cli test-connection
+
+# Common issues:
+# 1. Invalid API token - regenerate token
+# 2. Wrong email address - use Atlassian account email
+# 3. Incorrect host URL - ensure https:// prefix
+```
+
+### Authentication Errors
+
+- Verify your API token is correct
+- Check that the email matches your Atlassian account
+- Ensure the host URL includes `https://`
+
+### Permission Errors
+
+- API tokens inherit your user permissions
+- Check that your Jira account has access to the project/issue
+- Some operations require specific Jira permissions
+
+## Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ## License
 
 Apache-2.0
+
+## Links
+
+- [npm package](https://www.npmjs.com/package/jira-api-cli)
+- [GitHub repository](https://github.com/hesedcasa/jira-api-cli)
+- [Issue tracker](https://github.com/hesedcasa/jira-api-cli/issues)
+- [Jira API Documentation](https://developer.atlassian.com/cloud/jira/platform/rest/v3/)
+- [jira.js Library](https://github.com/MrRefactoring/jira.js)
+
+## Acknowledgments
+
+Built with [jira.js](https://github.com/MrRefactoring/jira.js) - A modern Jira REST API client for Node.js

@@ -31,7 +31,7 @@ npm run pre-commit          # Run format + find-deadcode
 
 ## Project Architecture
 
-This is a **MySQL CLI tool** that provides both interactive REPL and headless modes for database operations with built-in safety features.
+This is a **Jira API CLI tool** that provides both interactive REPL and headless modes for Jira operations.
 
 ### Project Structure
 
@@ -40,30 +40,27 @@ src/
 ├── index.ts (29 lines)                    # Main entry point
 ├── cli/
 │   ├── index.ts                           # Barrel export
-│   └── wrapper.ts (319 lines)             # CLI class with REPL logic
+│   └── wrapper.ts (334 lines)             # CLI class with REPL logic
 ├── commands/
 │   ├── index.ts                           # Barrel export
 │   ├── helpers.ts (45 lines)              # Command info helpers
-│   └── runner.ts (105 lines)              # Headless command execution
+│   └── runner.ts (121 lines)              # Headless command execution
 ├── config/
 │   ├── index.ts                           # Barrel export
-│   └── constants.ts (83 lines)            # Command definitions
+│   └── constants.ts (122 lines)           # Command definitions
 └── utils/
     ├── index.ts                           # Barrel export
     ├── argParser.ts (74 lines)            # Command-line argument parser
-    ├── config-loader.ts (135 lines)       # YAML config file loader
-    ├── mysql-database.ts (117 lines)      # Database operation wrapper
-    ├── mysql-utils.ts                     # Core MySQL utility class
-    └── query-validator.ts (133 lines)     # SQL safety validation
+    ├── config-loader.ts (120 lines)       # YAML config file loader
+    ├── jira-client.ts (167 lines)         # Jira API wrapper functions
+    └── jira-utils.ts (433 lines)          # Core Jira utility class
 
 tests/
 ├── unit/
 │   └── utils/
-│       ├── config-loader.test.ts          # Tests for config loading
-│       ├── mysql-utils.test.ts            # Tests for MySQL utilities
-│       └── query-validator.test.ts        # Tests for query validation
+│       └── config-loader.test.ts          # Tests for config loading
 └── integration/
-    └── mysql-database.test.ts             # Integration tests for database ops
+    └── jira-client.test.ts                # Integration tests for Jira ops
 ```
 
 ### Core Components
@@ -77,16 +74,16 @@ tests/
 #### CLI Module (`src/cli/`)
 
 - **wrapper class**: Main orchestrator managing:
-  - `connect()` - Loads configuration from `.claude/mysql-connector.local.md`
+  - `connect()` - Loads configuration from `.claude/jira-connector.local.md`
   - `start()` - Initiates interactive REPL with readline interface
   - `handleCommand()` - Parses and processes user commands
-  - `runCommand()` - Executes MySQL commands with result formatting
+  - `runCommand()` - Executes Jira commands with result formatting
   - `disconnect()` - Graceful cleanup on exit signals (SIGINT/SIGTERM)
 
 #### Commands Module (`src/commands/`)
 
 - `helpers.ts` - Display command information and help
-  - `printAvailableCommands()` - Lists all 7 available commands
+  - `printAvailableCommands()` - Lists all 10 available commands
   - `printCommandDetail(command)` - Shows detailed help for specific command
   - `getCurrentVersion()` - Reads version from package.json
 - `runner.ts` - Execute commands in headless mode
@@ -95,7 +92,7 @@ tests/
 #### Config Module (`src/config/`)
 
 - `constants.ts` - Centralized configuration
-  - `COMMANDS[]` - Array of 7 available MySQL command names
+  - `COMMANDS[]` - Array of 10 available Jira command names
   - `COMMANDS_INFO[]` - Brief descriptions for each command
   - `COMMANDS_DETAIL[]` - Detailed parameter documentation
 
@@ -104,93 +101,56 @@ tests/
 - `argParser.ts` - Command-line argument handling
   - `parseArguments(args)` - Parses CLI flags and routes execution
 - `config-loader.ts` - Configuration file management
-  - `loadConfig(projectRoot)` - Loads `.claude/mysql-connector.local.md`
-  - `getConnectionOptions(config, profileName)` - Builds mysql2 connection options
-  - TypeScript interfaces: `Config`, `MySQLProfile`, `SafetyConfig`, `ConnectionOptions`
-- `mysql-database.ts` - Database operation wrapper functions
-  - Exports: `executeQuery()`, `listDatabases()`, `listTables()`, `describeTable()`, `showIndexes()`, `explainQuery()`, `testConnection()`, `closeConnections()`
-  - Manages singleton `MySQLUtil` instance
-- `mysql-utils.ts` - Core MySQL utility class
-  - `MySQLUtil` class - Connection pooling and query execution
-  - Implements all 7 database commands with safety validation
-  - Formats results as table, JSON, CSV or TOON
-- `query-validator.ts` - SQL safety validation
-  - `checkBlacklist()` - Blocks dangerous operations (e.g., DROP DATABASE)
-  - `requiresConfirmation()` - Detects destructive operations (DELETE, UPDATE, DROP, TRUNCATE, ALTER)
-  - `analyzeQuery()` - Provides warnings for risky queries
-  - `applyDefaultLimit()` - Adds LIMIT clause to unbounded SELECT queries
+  - `loadConfig(projectRoot)` - Loads `.claude/jira-connector.local.md`
+  - `getJiraClientOptions(config, profileName)` - Builds jira.js client options
+  - TypeScript interfaces: `Config`, `JiraProfile`, `JiraClientOptions`
+- `jira-client.ts` - Jira API wrapper functions
+  - Exports: `listProjects()`, `getProject()`, `listIssues()`, `getIssue()`, `createIssue()`, `updateIssue()`, `deleteIssue()`, `listBoards()`, `getUser()`, `testConnection()`, `clearClients()`
+  - Manages singleton `JiraUtil` instance
+- `jira-utils.ts` - Core Jira utility class
+  - `JiraUtil` class - Client pooling and API calls
+  - Implements all 10 Jira commands
+  - Formats results as table, JSON or TOON
 
 ### Configuration System
 
-The CLI loads database profiles from `.claude/mysql-connector.local.md` with YAML frontmatter:
+The CLI loads Jira profiles from `.claude/jira-connector.local.md` with YAML frontmatter:
 
 ```yaml
 ---
 profiles:
-  local:
-    host: localhost
-    port: 3306
-    user: root
-    password: password
-    database: mydb
+  cloud:
+    host: https://your-domain.atlassian.net
+    email: your-email@example.com
+    apiToken: YOUR_API_TOKEN_HERE
 
-safety:
-  default_limit: 100
-  require_confirmation_for:
-    - DELETE
-    - UPDATE
-    - DROP
-    - TRUNCATE
-    - ALTER
-  blacklisted_operations:
-    - DROP DATABASE
-
-defaultProfile: local
-defaultFormat: table
+defaultProfile: cloud
+defaultFormat: json
 ---
 ```
 
 **Key behaviors:**
 
 - Profiles are referenced by name in commands
-- Multiple profiles support different environments (local, production, etc.)
-- Safety settings prevent accidental data loss
+- Multiple profiles support different Jira instances (cloud, staging, etc.)
 - Configuration is validated on load with clear error messages
+- API tokens are used for authentication (basic auth)
 
 ### REPL Interface
 
-- Custom prompt: `mysql>`
+- Custom prompt: `jira>`
 - **Special commands**: `help`, `commands`, `profiles`, `profile <name>`, `format <type>`, `clear`, `exit/quit/q`
-- **Database commands**: 7 commands accepting JSON arguments
-  1. `query` - Execute SQL queries
-  2. `list-databases` - List all databases
-  3. `list-tables` - List tables in current database
-  4. `describe-table` - Show table structure
-  5. `show-indexes` - Display table indexes
-  6. `explain-query` - Show query execution plan
-  7. `test-connection` - Test database connectivity
-
-### Safety Features
-
-1. **Query Validation** (`query-validator.ts`):
-   - Blacklist check blocks dangerous operations entirely
-   - Confirmation required for destructive operations in interactive mode
-   - Auto-applies LIMIT to unbounded SELECT queries
-   - Prevents multiple statement execution (SQL injection protection)
-
-2. **Connection Security**:
-   - 10-second connection timeout
-   - `multipleStatements: false` prevents SQL injection
-   - SSL support for production connections
-
-3. **Interactive Mode Protections**:
-   - Destructive operations require user confirmation
-   - Warnings displayed for risky queries
-   - Blacklisted operations completely blocked
-
-4. **Headless Mode Restrictions**:
-   - Destructive operations fail with error message
-   - User directed to use interactive mode for confirmations
+- **Jira commands**: 10 commands accepting JSON arguments
+  1. `list-projects` - List all accessible projects
+  2. `get-project` - Get details of a specific project
+  3. `list-issues` - List issues using JQL query
+  4. `get-issue` - Get details of a specific issue
+  5. `create-issue` - Create a new issue
+  6. `update-issue` - Update an existing issue
+  7. `delete-issue` - Delete an issue
+  8. `list-boards` - List agile boards
+  9. `get-user` - Get user information
+  10. `test-connection` - Test Jira API connection
 
 ### TypeScript Configuration
 
@@ -201,15 +161,18 @@ defaultFormat: table
 
 ## Available Commands
 
-The CLI provides **7 MySQL database commands**:
+The CLI provides **10 Jira API commands**:
 
-1. **query** - Execute SQL query with optional format (table/json/csv/toon)
-2. **list-databases** - List all accessible databases
-3. **list-tables** - List tables in current database
-4. **describe-table** - Show table structure (columns, types, keys)
-5. **show-indexes** - Display all indexes for a table
-6. **explain-query** - Show query execution plan
-7. **test-connection** - Test database connection
+1. **list-projects** - List all accessible projects
+2. **get-project** - Get details of a specific project
+3. **list-issues** - List issues using JQL query
+4. **get-issue** - Get details of a specific issue
+5. **create-issue** - Create a new issue
+6. **update-issue** - Update an existing issue
+7. **delete-issue** - Delete an issue
+8. **list-boards** - List agile boards (experimental)
+9. **get-user** - Get user information
+10. **test-connection** - Test Jira API connection
 
 ### Command Examples
 
@@ -218,23 +181,24 @@ The CLI provides **7 MySQL database commands**:
 npm start
 
 # Inside the REPL:
-mysql> commands                          # List all 7 commands
-mysql> help                              # Show help
-mysql> profiles                          # List available profiles
-mysql> profile production                # Switch profile
-mysql> format json                       # Change output format
-mysql> query '{"query":"SELECT * FROM users LIMIT 10"}'
-mysql> describe-table '{"table":"users"}'
-mysql> exit                              # Exit
+jira> commands                          # List all 10 commands
+jira> help                              # Show help
+jira> profiles                          # List available profiles
+jira> profile production                # Switch profile
+jira> format json                       # Change output format
+jira> list-projects
+jira> get-issue '{"issueIdOrKey":"PROJ-123"}'
+jira> list-issues '{"jql":"project = PROJ AND status = Open","maxResults":10}'
+jira> exit                              # Exit
 
 # Headless mode (one-off commands):
-npx mysqldb-cli test-connection '{"profile":"local"}'
-npx mysqldb-cli list-databases
-npx mysqldb-cli query '{"query":"SELECT COUNT(*) FROM users","format":"json"}'
-npx mysqldb-cli --commands        # List all commands
-npx mysqldb-cli query -h          # Command-specific help
-npx mysqldb-cli --help            # General help
-npx mysqldb-cli --version         # Show version
+npx jira-cli test-connection '{"profile":"cloud"}'
+npx jira-cli list-projects
+npx jira-cli get-issue '{"issueIdOrKey":"PROJ-123","format":"json"}'
+npx jira-cli --commands        # List all commands
+npx jira-cli list-issues -h    # Command-specific help
+npx jira-cli --help            # General help
+npx jira-cli --version         # Show version
 ```
 
 ## Code Structure & Module Responsibilities
@@ -250,7 +214,7 @@ npx mysqldb-cli --version         # Show version
 - Interactive REPL management
 - Configuration loading and profile switching
 - User command processing
-- Database command execution with result formatting
+- Jira command execution with result formatting
 - Graceful shutdown handling
 
 ### Command Helpers (`commands/helpers.ts`)
@@ -273,32 +237,25 @@ npx mysqldb-cli --version         # Show version
 
 ### Config Loader (`utils/config-loader.ts`)
 
-- Reads and parses `.claude/mysql-connector.local.md`
-- Extracts YAML frontmatter with database profiles
+- Reads and parses `.claude/jira-connector.local.md`
+- Extracts YAML frontmatter with Jira profiles
 - Validates required fields for each profile
-- Provides default values for safety settings
-- Builds mysql2 connection options
+- Provides default values for settings
+- Builds jira.js client options
 
-### MySQL Database (`utils/mysql-database.ts`)
+### Jira Client (`utils/jira-client.ts`)
 
-- Wrapper functions for all database operations
-- Manages singleton MySQLUtil instance
+- Wrapper functions for all Jira operations
+- Manages singleton JiraUtil instance
 - Exports clean async functions for each command
 
-### MySQL Utils (`utils/mysql-utils.ts`)
+### Jira Utils (`utils/jira-utils.ts`)
 
-- Core database interaction logic
-- Connection pooling per profile
-- Query execution with safety validation
-- Result formatting (table, JSON, CSV, TOON)
-- All 7 command implementations
-
-### Query Validator (`utils/query-validator.ts`)
-
-- SQL safety checks (blacklist, confirmation, analysis)
-- Query type detection
-- Auto-limiting for unbounded SELECT queries
-- Warning generation for risky patterns
+- Core Jira API interaction logic
+- Client pooling per profile
+- API call execution
+- Result formatting (table, JSON, TOON)
+- All 10 command implementations
 
 ### Argument Parser (`utils/argParser.ts`)
 
@@ -311,17 +268,18 @@ npx mysqldb-cli --version         # Show version
 - **Barrel Exports**: Each module directory has `index.ts` exporting public APIs
 - **ES Modules**: All imports use `.js` extensions (TypeScript requirement)
 - **Argument Parsing**: Supports JSON arguments for command parameters
-- **Connection Pooling**: Reuses connections per profile for efficiency
+- **Client Pooling**: Reuses Jira clients per profile for efficiency
 - **Signal Handling**: Graceful shutdown on Ctrl+C (SIGINT) and SIGTERM
 - **Error Handling**: Try-catch blocks with user-friendly error messages
-- **Configuration**: YAML frontmatter in `.claude/mysql-connector.local.md`
+- **Configuration**: YAML frontmatter in `.claude/jira-connector.local.md`
 
 ## Dependencies
 
 **Runtime**:
 
-- `mysql2@^3.15.3` - MySQL client for Node.js
+- `jira.js@^4.0.1` - Jira API client for Node.js
 - `yaml@^2.8.1` - YAML parser for config files
+- `@toon-format/toon@^2.0.0` - TOON format encoder
 
 **Development**:
 
@@ -362,21 +320,19 @@ npm run test:coverage
 tests/
 ├── unit/
 │   └── utils/
-│       ├── config-loader.test.ts      # Config loading and validation
-│       ├── mysql-utils.test.ts        # MySQL utility functions
-│       └── query-validator.test.ts    # Query safety validation
+│       └── config-loader.test.ts      # Config loading and validation
 └── integration/
-    └── mysql-database.test.ts         # Database operations end-to-end
+    └── jira-client.test.ts            # Jira API operations end-to-end
 ```
 
 ## Important Notes
 
-1. **Configuration Required**: CLI requires `.claude/mysql-connector.local.md` with valid database profiles
+1. **Configuration Required**: CLI requires `.claude/jira-connector.local.md` with valid Jira profiles
 2. **ES2022 Modules**: Project uses `"type": "module"` - no CommonJS
-3. **Safety First**: Built-in protections prevent accidental data loss
-4. **Multi-Profile**: Supports multiple database environments (local, production, etc.)
-5. **Flexible Output**: Table, JSON, CSV or TOON formats for different use cases
-6. **Connection Pooling**: Reuses connections per profile for better performance
+3. **API Authentication**: Uses Jira API tokens with basic authentication
+4. **Multi-Profile**: Supports multiple Jira instances (cloud, staging, etc.)
+5. **Flexible Output**: Table, JSON or TOON formats for different use cases
+6. **Client Pooling**: Reuses clients per profile for better performance
 
 ## Commit Message Convention
 
@@ -392,12 +348,12 @@ tests/
 **Examples:**
 
 ```
-feat: add CSV export format for query results
+feat: add list-boards command for agile boards
 fix: handle connection timeout errors gracefully
 docs: update configuration examples in README
-refactor: extract query validation into separate module
-test: add integration tests for database operations
-chore: update mysql2 to latest version
+refactor: extract API formatting into separate module
+test: add integration tests for Jira operations
+chore: update jira.js to latest version
 ```
 
 When creating pull requests, the PR title must follow this format.
