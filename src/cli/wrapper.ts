@@ -127,17 +127,17 @@ export class wrapper {
     }
 
     // Parse command invocation: command [args...]
-    const parts = trimmed.split(' ');
-    const command = parts[0];
-    const args = parts.slice(1);
+    const firstSpaceIndex = trimmed.indexOf(' ');
+    const command = firstSpaceIndex === -1 ? trimmed : trimmed.substring(0, firstSpaceIndex);
+    const arg = firstSpaceIndex === -1 ? '' : trimmed.substring(firstSpaceIndex + 1).trim();
 
-    if (args[0] === '-h') {
+    if (arg === '-h') {
       printCommandDetail(command);
       this.rl.prompt();
       return;
     }
 
-    await this.runCommand(command, args[0]);
+    await this.runCommand(command, arg);
   }
 
   /**
