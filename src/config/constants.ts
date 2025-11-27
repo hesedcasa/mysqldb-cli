@@ -56,23 +56,26 @@ list-tables '{"profile":"local"}'`,
 Parameters:
 - table (required): string - Table name to describe
 - profile (optional): string - Database profile name (default: configured default profile)
+- format (optional): string - Output format: table, json, or toon (default: table)
 
 Example:
-describe-table '{"table":"users","profile":"local"}'`,
+describe-table '{"table":"users","profile":"local","format":"json"}'`,
   `
 Parameters:
 - table (required): string - Table name to show indexes for
 - profile (optional): string - Database profile name (default: configured default profile)
+- format (optional): string - Output format: table, json, or toon (default: table)
 
 Example:
-show-indexes '{"table":"users","profile":"local"}'`,
+show-indexes '{"table":"users","profile":"local","format":"json"}'`,
   `
 Parameters:
 - query (required): string - SQL query to explain
 - profile (optional): string - Database profile name (default: configured default profile)
+- format (optional): string - Output format: table, json, or toon (default: table)
 
 Example:
-explain-query '{"query":"SELECT * FROM users WHERE id = 1","profile":"local"}'`,
+explain-query '{"query":"SELECT * FROM users WHERE id = 1","profile":"local","format":"json"}'`,
   `
 Parameters:
 - profile (optional): string - Database profile name (default: configured default profile)

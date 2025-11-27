@@ -70,30 +70,45 @@ export async function listTables(profile: string): Promise<TableListResult> {
  * Describe table structure
  * @param profile - Database profile name
  * @param table - Table name
+ * @param format - Output format (table, json, toon)
  */
-export async function describeTable(profile: string, table: string): Promise<TableStructureResult> {
+export async function describeTable(
+  profile: string,
+  table: string,
+  format: 'table' | 'json' | 'toon' = 'table'
+): Promise<TableStructureResult> {
   const db = await initDB();
-  return await db.describeTable(profile, table);
+  return await db.describeTable(profile, table, format);
 }
 
 /**
  * Show table indexes
  * @param profile - Database profile name
  * @param table - Table name
+ * @param format - Output format (table, json, toon)
  */
-export async function showIndexes(profile: string, table: string): Promise<IndexResult> {
+export async function showIndexes(
+  profile: string,
+  table: string,
+  format: 'table' | 'json' | 'toon' = 'table'
+): Promise<IndexResult> {
   const db = await initDB();
-  return await db.showIndexes(profile, table);
+  return await db.showIndexes(profile, table, format);
 }
 
 /**
  * Explain query execution plan
  * @param profile - Database profile name
  * @param query - SQL query to explain
+ * @param format - Output format (table, json, toon)
  */
-export async function explainQuery(profile: string, query: string): Promise<ExplainResult> {
+export async function explainQuery(
+  profile: string,
+  query: string,
+  format: 'table' | 'json' | 'toon' = 'table'
+): Promise<ExplainResult> {
   const db = await initDB();
-  return await db.explainQuery(profile, query);
+  return await db.explainQuery(profile, query, format);
 }
 
 /**

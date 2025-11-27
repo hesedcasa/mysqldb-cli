@@ -261,16 +261,17 @@ Show the structure of a specific table (columns, types, keys, etc.).
 
 - `table` (required): string - Table name to describe
 - `profile` (optional): string - Database profile name (default: configured default profile)
+- `format` (optional): string - Output format: `table`, `json`, or `toon` (default: `table`)
 
 **Examples:**
 
 ```bash
 # Interactive mode
-mysql> describe-table '{"table":"users"}'
+mysql> describe-table '{"table":"users","format":"json"}'
 mysql> describe-table '{"table":"posts","profile":"production"}'
 
 # Headless mode
-npx mysqldb-cli describe-table '{"table":"users"}'
+npx mysqldb-cli describe-table '{"table":"users","format":"toon"}'
 npx mysqldb-cli describe-table '{"table":"orders","profile":"production"}'
 ```
 
@@ -282,16 +283,17 @@ Display all indexes for a specific table.
 
 - `table` (required): string - Table name to show indexes for
 - `profile` (optional): string - Database profile name (default: configured default profile)
+- `format` (optional): string - Output format: `table`, `json`, or `toon` (default: `table`)
 
 **Examples:**
 
 ```bash
 # Interactive mode
-mysql> show-indexes '{"table":"users"}'
+mysql> show-indexes '{"table":"users","format":"json"}'
 mysql> show-indexes '{"table":"posts","profile":"local"}'
 
 # Headless mode
-npx mysqldb-cli show-indexes '{"table":"users"}'
+npx mysqldb-cli show-indexes '{"table":"users","format":"toon"}'
 npx mysqldb-cli show-indexes '{"table":"orders","profile":"production"}'
 ```
 
@@ -303,16 +305,17 @@ Show the execution plan for a SQL query (useful for performance optimization).
 
 - `query` (required): string - SQL query to explain
 - `profile` (optional): string - Database profile name (default: configured default profile)
+- `format` (optional): string - Output format: `table`, `json`, or `toon` (default: `table`)
 
 **Examples:**
 
 ```bash
 # Interactive mode
-mysql> explain-query '{"query":"SELECT * FROM users WHERE email = 'alice@example.com'"}'
+mysql> explain-query '{"query":"SELECT * FROM users WHERE email = 'alice@example.com'","format":"json"}'
 mysql> explain-query '{"query":"SELECT u.*, p.* FROM users u JOIN posts p ON u.id = p.user_id"}'
 
 # Headless mode
-npx mysqldb-cli explain-query '{"query":"SELECT * FROM users WHERE id = 1"}'
+npx mysqldb-cli explain-query '{"query":"SELECT * FROM users WHERE id = 1","format":"toon"}'
 npx mysqldb-cli explain-query '{"query":"SELECT * FROM orders WHERE created_at > NOW() - INTERVAL 7 DAY"}'
 ```
 

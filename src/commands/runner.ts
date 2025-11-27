@@ -55,7 +55,7 @@ export const runCommand = async (
           console.error('ERROR: "table" parameter is required');
           process.exit(1);
         }
-        result = await describeTable(profile, args.table);
+        result = await describeTable(profile, args.table, format);
         break;
 
       case 'show-indexes':
@@ -63,7 +63,7 @@ export const runCommand = async (
           console.error('ERROR: "table" parameter is required');
           process.exit(1);
         }
-        result = await showIndexes(profile, args.table);
+        result = await showIndexes(profile, args.table, format);
         break;
 
       case 'explain-query':
@@ -71,7 +71,7 @@ export const runCommand = async (
           console.error('ERROR: "query" parameter is required');
           process.exit(1);
         }
-        result = await explainQuery(profile, args.query);
+        result = await explainQuery(profile, args.query, format);
         break;
 
       case 'test-connection':

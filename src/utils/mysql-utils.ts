@@ -356,15 +356,28 @@ export class MySQLUtil {
   /**
    * Describe table structure
    */
-  async describeTable(profileName: string, table: string): Promise<TableStructureResult> {
+  async describeTable(
+    profileName: string,
+    table: string,
+    format: 'table' | 'json' | 'toon' = 'table'
+  ): Promise<TableStructureResult> {
     try {
       const connection = await this.getConnection(profileName);
       const [rows, fields] = await connection.query(`DESCRIBE ${table}`);
 
+      let result = '';
+      if (format === 'json') {
+        result += this.formatAsJson(rows as RowDataPacket[]);
+      } else if (format === 'toon') {
+        result += this.formatAsToon(rows as RowDataPacket[]);
+      } else {
+        result += this.formatAsTable(rows as RowDataPacket[], fields as FieldPacket[]);
+      }
+
       return {
         success: true,
         structure: rows as RowDataPacket[],
-        result: `Structure of table "${table}":\n\n${this.formatAsTable(rows as RowDataPacket[], fields as FieldPacket[])}`,
+        result,
       };
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -378,15 +391,28 @@ export class MySQLUtil {
   /**
    * Show table indexes
    */
-  async showIndexes(profileName: string, table: string): Promise<IndexResult> {
+  async showIndexes(
+    profileName: string,
+    table: string,
+    format: 'table' | 'json' | 'toon' = 'table'
+  ): Promise<IndexResult> {
     try {
       const connection = await this.getConnection(profileName);
       const [rows, fields] = await connection.query(`SHOW INDEXES FROM ${table}`);
 
+      let result = '';
+      if (format === 'json') {
+        result += this.formatAsJson(rows as RowDataPacket[]);
+      } else if (format === 'toon') {
+        result += this.formatAsToon(rows as RowDataPacket[]);
+      } else {
+        result += this.formatAsTable(rows as RowDataPacket[], fields as FieldPacket[]);
+      }
+
       return {
         success: true,
         indexes: rows as RowDataPacket[],
-        result: `Indexes on table "${table}":\n\n${this.formatAsTable(rows as RowDataPacket[], fields as FieldPacket[])}`,
+        result,
       };
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -400,15 +426,28 @@ export class MySQLUtil {
   /**
    * Explain query execution plan
    */
-  async explainQuery(profileName: string, query: string): Promise<ExplainResult> {
+  async explainQuery(
+    profileName: string,
+    query: string,
+    format: 'table' | 'json' | 'toon' = 'table'
+  ): Promise<ExplainResult> {
     try {
       const connection = await this.getConnection(profileName);
       const [rows, fields] = await connection.query(`EXPLAIN ${query}`);
 
+      let result = '';
+      if (format === 'json') {
+        result += this.formatAsJson(rows as RowDataPacket[]);
+      } else if (format === 'toon') {
+        result += this.formatAsToon(rows as RowDataPacket[]);
+      } else {
+        result += this.formatAsTable(rows as RowDataPacket[], fields as FieldPacket[]);
+      }
+
       return {
         success: true,
         plan: rows as RowDataPacket[],
-        result: `Execution plan for query:\n${query}\n\n${this.formatAsTable(rows as RowDataPacket[], fields as FieldPacket[])}`,
+        result,
       };
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
