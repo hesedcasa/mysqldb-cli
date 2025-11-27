@@ -264,8 +264,8 @@ All commands:
 ${commandList}
 
 Examples:
-  query '{"query":"SELECT * FROM users LIMIT 5"}'
-  describe-table '{"table":"users"}'
+  query {"query":"SELECT * FROM users LIMIT 5"}
+  describe-table {"table":"users"}
   list-databases
   test-connection
 

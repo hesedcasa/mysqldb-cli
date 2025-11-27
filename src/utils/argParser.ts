@@ -70,15 +70,5 @@ Examples:
   npx mysqldb-cli list-databases '{"profile":"local"}'
   npx mysqldb-cli test-connection
 
-Interactive mode special commands:
-  profile <name>   - Switch database profile
-  profiles         - List all available profiles
-  format <type>    - Set output format (table, json, csv)
-  clear            - Clear the screen
-  exit, quit, q    - Exit the CLI
-
-Configuration:
-  Create .claude/mysql-connector.local.md with your database profiles in YAML frontmatter.
-
 `);
 };

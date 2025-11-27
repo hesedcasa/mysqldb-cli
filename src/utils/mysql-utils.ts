@@ -1,6 +1,6 @@
+import { encode } from '@toon-format/toon';
 import mysql from 'mysql2/promise';
 import type { Connection, FieldPacket, OkPacket, RowDataPacket } from 'mysql2/promise';
-import { encode } from '@toon-format/toon';
 
 import type { Config } from './config-loader.js';
 import { getConnectionOptions } from './config-loader.js';

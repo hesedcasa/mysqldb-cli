@@ -113,7 +113,7 @@ tests/
 - `mysql-utils.ts` - Core MySQL utility class
   - `MySQLUtil` class - Connection pooling and query execution
   - Implements all 7 database commands with safety validation
-  - Formats results as table, JSON, or CSV
+  - Formats results as table, JSON, CSV or TOON
 - `query-validator.ts` - SQL safety validation
   - `checkBlacklist()` - Blocks dangerous operations (e.g., DROP DATABASE)
   - `requiresConfirmation()` - Detects destructive operations (DELETE, UPDATE, DROP, TRUNCATE, ALTER)
@@ -203,7 +203,7 @@ defaultFormat: table
 
 The CLI provides **7 MySQL database commands**:
 
-1. **query** - Execute SQL query with optional format (table/json/csv)
+1. **query** - Execute SQL query with optional format (table/json/csv/toon)
 2. **list-databases** - List all accessible databases
 3. **list-tables** - List tables in current database
 4. **describe-table** - Show table structure (columns, types, keys)
@@ -290,7 +290,7 @@ npx mysqldb-cli --version         # Show version
 - Core database interaction logic
 - Connection pooling per profile
 - Query execution with safety validation
-- Result formatting (table, JSON, CSV)
+- Result formatting (table, JSON, CSV, TOON)
 - All 7 command implementations
 
 ### Query Validator (`utils/query-validator.ts`)
@@ -375,7 +375,7 @@ tests/
 2. **ES2022 Modules**: Project uses `"type": "module"` - no CommonJS
 3. **Safety First**: Built-in protections prevent accidental data loss
 4. **Multi-Profile**: Supports multiple database environments (local, production, etc.)
-5. **Flexible Output**: Table, JSON, or CSV formats for different use cases
+5. **Flexible Output**: Table, JSON, CSV or TOON formats for different use cases
 6. **Connection Pooling**: Reuses connections per profile for better performance
 
 ## Commit Message Convention

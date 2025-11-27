@@ -9,7 +9,7 @@ A powerful command-line interface for MySQL database interaction with built-in s
 - 💻 **Interactive REPL** for database exploration and queries
 - 🚀 **Headless mode** for one-off command execution
 - 🔐 **Multi-profile support** for managing different database connections
-- 📊 **Multiple output formats**: table, JSON, or CSV
+- 📊 **Multiple output formats**: table, JSON, CSV or TOON
 - 🛡️ **Safety features** for destructive operations (DELETE, UPDATE, DROP, etc.)
 - 🔧 **Database introspection** tools (list databases/tables, describe schema, show indexes)
 - ⚡ **Query execution** with EXPLAIN support
@@ -85,7 +85,7 @@ This file stores your MySQL database connection profiles.
   - `blacklisted_operations`: Completely blocked operations
 
 - **defaultProfile**: Profile name to use when none specified
-- **defaultFormat**: Default output format (`table`, `json`, or `csv`)
+- **defaultFormat**: Default output format (`table`, `json`, `csv` or `toon`)
 
 ## Quick Start
 
@@ -198,7 +198,7 @@ Execute a SQL query on the database.
 
 - `query` (required): string - SQL query to execute
 - `profile` (optional): string - Database profile name (default: configured default profile)
-- `format` (optional): string - Output format: `table`, `json`, or `csv` (default: `table`)
+- `format` (optional): string - Output format: `table`, `json`, `csv` or `toon` (default: `table`)
 
 **Examples:**
 
