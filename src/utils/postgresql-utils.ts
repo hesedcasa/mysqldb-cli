@@ -1,15 +1,15 @@
 import { encode } from '@toon-format/toon';
-import mysql from 'mysql2/promise';
-import type { Connection, FieldPacket, OkPacket, RowDataPacket } from 'mysql2/promise';
+import pg from 'pg';
 
 import type { Config } from './config-loader.js';
-import { getMySQLConnectionOptions } from './config-loader.js';
+import { getPostgreSQLConnectionOptions, getPostgreSQLSchema } from './config-loader.js';
 import type {
   ConnectionTestResult,
   DatabaseListResult,
   DatabaseUtil,
   ExplainResult,
   IndexResult,
+  OutputFormat,
   QueryResult,
   TableListResult,
   TableStructureResult,
@@ -22,13 +22,19 @@ import {
   requiresConfirmation,
 } from './query-validator.js';
 
+const { Pool } = pg;
+
+type PoolClient = pg.PoolClient;
+type QueryResultRow = Record<string, unknown>;
+type FieldDef = pg.FieldDef;
+
 /**
- * MySQL Database Utility Module
+ * PostgreSQL Database Utility Module
  * Provides core database operations with safety validation and formatting
  */
-export class MySQLUtil implements DatabaseUtil {
+export class PostgreSQLUtil implements DatabaseUtil {
   private config: Config;
-  private connectionPool: Map<string, Connection>;
+  private connectionPool: Map<string, pg.Pool>;
 
   constructor(config: Config) {
     this.config = config;
@@ -36,24 +42,24 @@ export class MySQLUtil implements DatabaseUtil {
   }
 
   /**
-   * Get or create MySQL connection for a profile
+   * Get or create PostgreSQL connection pool for a profile
    */
-  private async getConnection(profileName: string): Promise<Connection> {
+  private async getPool(profileName: string): Promise<pg.Pool> {
     if (this.connectionPool.has(profileName)) {
       return this.connectionPool.get(profileName)!;
     }
 
-    const options = getMySQLConnectionOptions(this.config, profileName);
-    const connection = await mysql.createConnection(options);
-    this.connectionPool.set(profileName, connection);
+    const options = getPostgreSQLConnectionOptions(this.config, profileName);
+    const pool = new Pool(options);
+    this.connectionPool.set(profileName, pool);
 
-    return connection;
+    return pool;
   }
 
   /**
    * Format query results as table
    */
-  formatAsTable(rows: RowDataPacket[], fields: FieldPacket[]): string {
+  private formatAsTable(rows: QueryResultRow[], fields: FieldDef[]): string {
     if (!rows || rows.length === 0) {
       return 'No results';
     }
@@ -65,24 +71,24 @@ export class MySQLUtil implements DatabaseUtil {
     });
 
     // Header
-    let table = '┌' + columnWidths.map(w => '─'.repeat(w + 2)).join('┬') + '┐\n';
-    table += '│ ' + columnNames.map((name, i) => name.padEnd(columnWidths[i])).join(' │ ') + ' │\n';
-    table += '├' + columnWidths.map(w => '─'.repeat(w + 2)).join('┼') + '┤\n';
+    let table = '\u250c' + columnWidths.map(w => '\u2500'.repeat(w + 2)).join('\u252c') + '\u2510\n';
+    table += '\u2502 ' + columnNames.map((name, i) => name.padEnd(columnWidths[i])).join(' \u2502 ') + ' \u2502\n';
+    table += '\u251c' + columnWidths.map(w => '\u2500'.repeat(w + 2)).join('\u253c') + '\u2524\n';
 
     // Rows
     for (const row of rows) {
       table +=
-        '│ ' +
+        '\u2502 ' +
         columnNames
           .map((name, i) => {
             const value = row[name] ?? 'NULL';
             return String(value).padEnd(columnWidths[i]);
           })
-          .join(' │ ') +
-        ' │\n';
+          .join(' \u2502 ') +
+        ' \u2502\n';
     }
 
-    table += '└' + columnWidths.map(w => '─'.repeat(w + 2)).join('┴') + '┘';
+    table += '\u2514' + columnWidths.map(w => '\u2500'.repeat(w + 2)).join('\u2534') + '\u2518';
 
     return table;
   }
@@ -90,14 +96,14 @@ export class MySQLUtil implements DatabaseUtil {
   /**
    * Format query results as JSON
    */
-  formatAsJson(rows: RowDataPacket[]): string {
+  private formatAsJson(rows: QueryResultRow[]): string {
     return JSON.stringify(rows, null, 2);
   }
 
   /**
    * Format query results as CSV
    */
-  formatAsCsv(rows: RowDataPacket[], fields: FieldPacket[]): string {
+  private formatAsCsv(rows: QueryResultRow[], fields: FieldDef[]): string {
     if (!rows || rows.length === 0) {
       return '';
     }
@@ -124,7 +130,7 @@ export class MySQLUtil implements DatabaseUtil {
   /**
    * Format query results as TOON (Token-Oriented Object Notation)
    */
-  formatAsToon(rows: RowDataPacket[]): string {
+  private formatAsToon(rows: QueryResultRow[]): string {
     if (!rows || rows.length === 0) {
       return '';
     }
@@ -156,11 +162,7 @@ export class MySQLUtil implements DatabaseUtil {
   /**
    * Validate query and execute if safe
    */
-  async executeQuery(
-    profileName: string,
-    query: string,
-    format: 'table' | 'json' | 'csv' | 'toon' = 'table'
-  ): Promise<QueryResult> {
+  async executeQuery(profileName: string, query: string, format: OutputFormat = 'table'): Promise<QueryResult> {
     // Validate query against blacklist
     const blacklistCheck = checkBlacklist(query, this.config.safety.blacklisted_operations);
     if (!blacklistCheck.allowed) {
@@ -185,8 +187,8 @@ export class MySQLUtil implements DatabaseUtil {
     let warningText = '';
     if (warnings.length > 0) {
       warningText =
-        '⚠️  Query Analysis:\n' +
-        warnings.map(w => `  [${w.level.toUpperCase()}] ${w.message}\n  → ${w.suggestion}`).join('\n') +
+        '\u26a0\ufe0f  Query Analysis:\n' +
+        warnings.map(w => `  [${w.level.toUpperCase()}] ${w.message}\n  \u2192 ${w.suggestion}`).join('\n') +
         '\n\n';
     }
 
@@ -196,43 +198,40 @@ export class MySQLUtil implements DatabaseUtil {
     if (queryType === 'SELECT') {
       finalQuery = applyDefaultLimit(query, this.config.safety.default_limit);
       if (finalQuery !== query) {
-        warningText += `ℹ️  Applied default LIMIT ${this.config.safety.default_limit}\n\n`;
+        warningText += `\u2139\ufe0f  Applied default LIMIT ${this.config.safety.default_limit}\n\n`;
       }
     }
 
+    let client: PoolClient | null = null;
     try {
-      const connection = await this.getConnection(profileName);
-      const [rows, fields] = await connection.query(finalQuery);
+      const pool = await this.getPool(profileName);
+      client = await pool.connect();
+      const result = await client.query(finalQuery);
 
-      let result = '';
+      let output = '';
       if (queryType === 'SELECT' || queryType === 'SHOW' || queryType === 'DESCRIBE' || queryType === 'EXPLAIN') {
-        const rowCount = Array.isArray(rows) ? rows.length : 0;
-        result += `Query executed successfully. Rows returned: ${rowCount}\n\n`;
+        const rowCount = result.rows.length;
+        output += `Query executed successfully. Rows returned: ${rowCount}\n\n`;
 
         if (format === 'json') {
-          result += this.formatAsJson(rows as RowDataPacket[]);
+          output += this.formatAsJson(result.rows);
         } else if (format === 'csv') {
-          result += this.formatAsCsv(rows as RowDataPacket[], fields as FieldPacket[]);
+          output += this.formatAsCsv(result.rows, result.fields);
         } else if (format === 'toon') {
-          result += this.formatAsToon(rows as RowDataPacket[]);
+          output += this.formatAsToon(result.rows);
         } else {
-          result += this.formatAsTable(rows as RowDataPacket[], fields as FieldPacket[]);
+          output += this.formatAsTable(result.rows, result.fields);
         }
       } else {
         // INSERT, UPDATE, DELETE, DDL
-        const okPacket = rows as OkPacket;
-        const affectedRows = okPacket.affectedRows ?? 0;
-        const insertId = okPacket.insertId ?? null;
-        result += `Query executed successfully.\n`;
-        result += `Affected rows: ${affectedRows}\n`;
-        if (insertId) {
-          result += `Insert ID: ${insertId}\n`;
-        }
+        const affectedRows = result.rowCount ?? 0;
+        output += `Query executed successfully.\n`;
+        output += `Affected rows: ${affectedRows}\n`;
       }
 
       return {
         success: true,
-        result: warningText + result,
+        result: warningText + output,
       };
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -240,6 +239,10 @@ export class MySQLUtil implements DatabaseUtil {
         success: false,
         error: `ERROR: ${errorMessage}`,
       };
+    } finally {
+      if (client) {
+        client.release();
+      }
     }
   }
 
@@ -247,14 +250,18 @@ export class MySQLUtil implements DatabaseUtil {
    * List all databases
    */
   async listDatabases(profileName: string): Promise<DatabaseListResult> {
+    let client: PoolClient | null = null;
     try {
-      const connection = await this.getConnection(profileName);
-      const [rows] = await connection.query('SHOW DATABASES');
-      const databases = (rows as RowDataPacket[]).map(row => row.Database as string);
+      const pool = await this.getPool(profileName);
+      client = await pool.connect();
+      const result = await client.query(
+        'SELECT datname as "Database" FROM pg_database WHERE datistemplate = false ORDER BY datname'
+      );
+      const databases = result.rows.map(row => row.Database as string);
       return {
         success: true,
         databases,
-        result: `Databases:\n${databases.map(db => `  • ${db}`).join('\n')}`,
+        result: `Databases:\n${databases.map(db => `  \u2022 ${db}`).join('\n')}`,
       };
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -262,6 +269,10 @@ export class MySQLUtil implements DatabaseUtil {
         success: false,
         error: `ERROR: ${errorMessage}`,
       };
+    } finally {
+      if (client) {
+        client.release();
+      }
     }
   }
 
@@ -269,18 +280,21 @@ export class MySQLUtil implements DatabaseUtil {
    * List all tables in current database
    */
   async listTables(profileName: string): Promise<TableListResult> {
+    let client: PoolClient | null = null;
     try {
-      const connection = await this.getConnection(profileName);
-      const [rows] = await connection.query('SHOW TABLES');
-
-      const rowsArray = rows as RowDataPacket[];
-      const tableKey = Object.keys(rowsArray[0])[0];
-      const tables = rowsArray.map(row => row[tableKey] as string);
+      const pool = await this.getPool(profileName);
+      client = await pool.connect();
+      const schema = getPostgreSQLSchema(this.config, profileName);
+      const result = await client.query(
+        'SELECT tablename as "Tables" FROM pg_tables WHERE schemaname = $1 ORDER BY tablename',
+        [schema]
+      );
+      const tables = result.rows.map(row => row.Tables as string);
 
       return {
         success: true,
         tables,
-        result: `Tables in database:\n${tables.map(table => `  • ${table}`).join('\n')}`,
+        result: `Tables in schema '${schema}':\n${tables.map(table => `  \u2022 ${table}`).join('\n')}`,
       };
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -288,6 +302,10 @@ export class MySQLUtil implements DatabaseUtil {
         success: false,
         error: `ERROR: ${errorMessage}`,
       };
+    } finally {
+      if (client) {
+        client.release();
+      }
     }
   }
 
@@ -297,25 +315,52 @@ export class MySQLUtil implements DatabaseUtil {
   async describeTable(
     profileName: string,
     table: string,
-    format: 'table' | 'json' | 'toon' = 'table'
+    format: OutputFormat = 'table'
   ): Promise<TableStructureResult> {
+    let client: PoolClient | null = null;
     try {
-      const connection = await this.getConnection(profileName);
-      const [rows, fields] = await connection.query(`DESCRIBE ${table}`);
+      const pool = await this.getPool(profileName);
+      client = await pool.connect();
+      const schema = getPostgreSQLSchema(this.config, profileName);
+      const result = await client.query(
+        `SELECT
+          column_name as "Field",
+          data_type as "Type",
+          is_nullable as "Null",
+          column_default as "Default",
+          CASE
+            WHEN pk.column_name IS NOT NULL THEN 'PRI'
+            ELSE ''
+          END as "Key"
+        FROM information_schema.columns c
+        LEFT JOIN (
+          SELECT ku.column_name
+          FROM information_schema.table_constraints tc
+          JOIN information_schema.key_column_usage ku
+            ON tc.constraint_name = ku.constraint_name
+            AND tc.table_schema = ku.table_schema
+          WHERE tc.constraint_type = 'PRIMARY KEY'
+            AND tc.table_name = $1
+            AND tc.table_schema = $2
+        ) pk ON c.column_name = pk.column_name
+        WHERE c.table_name = $1 AND c.table_schema = $2
+        ORDER BY c.ordinal_position`,
+        [table, schema]
+      );
 
-      let result = '';
+      let output = '';
       if (format === 'json') {
-        result += this.formatAsJson(rows as RowDataPacket[]);
+        output += this.formatAsJson(result.rows);
       } else if (format === 'toon') {
-        result += this.formatAsToon(rows as RowDataPacket[]);
+        output += this.formatAsToon(result.rows);
       } else {
-        result += this.formatAsTable(rows as RowDataPacket[], fields as FieldPacket[]);
+        output += this.formatAsTable(result.rows, result.fields);
       }
 
       return {
         success: true,
-        structure: rows as RowDataPacket[],
-        result,
+        structure: result.rows,
+        result: output,
       };
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -323,34 +368,46 @@ export class MySQLUtil implements DatabaseUtil {
         success: false,
         error: `ERROR: ${errorMessage}`,
       };
+    } finally {
+      if (client) {
+        client.release();
+      }
     }
   }
 
   /**
    * Show table indexes
    */
-  async showIndexes(
-    profileName: string,
-    table: string,
-    format: 'table' | 'json' | 'toon' = 'table'
-  ): Promise<IndexResult> {
+  async showIndexes(profileName: string, table: string, format: OutputFormat = 'table'): Promise<IndexResult> {
+    let client: PoolClient | null = null;
     try {
-      const connection = await this.getConnection(profileName);
-      const [rows, fields] = await connection.query(`SHOW INDEXES FROM ${table}`);
+      const pool = await this.getPool(profileName);
+      client = await pool.connect();
+      const schema = getPostgreSQLSchema(this.config, profileName);
+      const result = await client.query(
+        `SELECT
+          schemaname as "Schema",
+          tablename as "Table",
+          indexname as "Key_name",
+          indexdef as "Index_definition"
+        FROM pg_indexes
+        WHERE tablename = $1 AND schemaname = $2`,
+        [table, schema]
+      );
 
-      let result = '';
+      let output = '';
       if (format === 'json') {
-        result += this.formatAsJson(rows as RowDataPacket[]);
+        output += this.formatAsJson(result.rows);
       } else if (format === 'toon') {
-        result += this.formatAsToon(rows as RowDataPacket[]);
+        output += this.formatAsToon(result.rows);
       } else {
-        result += this.formatAsTable(rows as RowDataPacket[], fields as FieldPacket[]);
+        output += this.formatAsTable(result.rows, result.fields);
       }
 
       return {
         success: true,
-        indexes: rows as RowDataPacket[],
-        result,
+        indexes: result.rows,
+        result: output,
       };
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -358,34 +415,36 @@ export class MySQLUtil implements DatabaseUtil {
         success: false,
         error: `ERROR: ${errorMessage}`,
       };
+    } finally {
+      if (client) {
+        client.release();
+      }
     }
   }
 
   /**
    * Explain query execution plan
    */
-  async explainQuery(
-    profileName: string,
-    query: string,
-    format: 'table' | 'json' | 'toon' = 'table'
-  ): Promise<ExplainResult> {
+  async explainQuery(profileName: string, query: string, format: OutputFormat = 'table'): Promise<ExplainResult> {
+    let client: PoolClient | null = null;
     try {
-      const connection = await this.getConnection(profileName);
-      const [rows, fields] = await connection.query(`EXPLAIN ${query}`);
+      const pool = await this.getPool(profileName);
+      client = await pool.connect();
+      const result = await client.query(`EXPLAIN ${query}`);
 
-      let result = '';
+      let output = '';
       if (format === 'json') {
-        result += this.formatAsJson(rows as RowDataPacket[]);
+        output += this.formatAsJson(result.rows);
       } else if (format === 'toon') {
-        result += this.formatAsToon(rows as RowDataPacket[]);
+        output += this.formatAsToon(result.rows);
       } else {
-        result += this.formatAsTable(rows as RowDataPacket[], fields as FieldPacket[]);
+        output += this.formatAsTable(result.rows, result.fields);
       }
 
       return {
         success: true,
-        plan: rows as RowDataPacket[],
-        result,
+        plan: result.rows,
+        result: output,
       };
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -393,6 +452,10 @@ export class MySQLUtil implements DatabaseUtil {
         success: false,
         error: `ERROR: ${errorMessage}`,
       };
+    } finally {
+      if (client) {
+        client.release();
+      }
     }
   }
 
@@ -400,16 +463,18 @@ export class MySQLUtil implements DatabaseUtil {
    * Test database connection
    */
   async testConnection(profileName: string): Promise<ConnectionTestResult> {
+    let client: PoolClient | null = null;
     try {
-      const connection = await this.getConnection(profileName);
-      const [rows] = await connection.query('SELECT VERSION() as version, DATABASE() as current_database');
+      const pool = await this.getPool(profileName);
+      client = await pool.connect();
+      const result = await client.query('SELECT version() as version, current_database() as current_database');
 
-      const info = (rows as RowDataPacket[])[0];
+      const info = result.rows[0];
       return {
         success: true,
         version: info.version as string,
         database: info.current_database as string,
-        result: `✅ Connection successful!\n\nProfile: ${profileName}\nMySQL Version: ${info.version}\nCurrent Database: ${info.current_database}`,
+        result: `\u2705 Connection successful!\n\nProfile: ${profileName}\nPostgreSQL Version: ${info.version}\nCurrent Database: ${info.current_database}`,
       };
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -417,6 +482,10 @@ export class MySQLUtil implements DatabaseUtil {
         success: false,
         error: `ERROR: ${errorMessage}`,
       };
+    } finally {
+      if (client) {
+        client.release();
+      }
     }
   }
 
@@ -424,8 +493,8 @@ export class MySQLUtil implements DatabaseUtil {
    * Close all connections
    */
   async closeAll(): Promise<void> {
-    for (const connection of this.connectionPool.values()) {
-      await connection.end();
+    for (const pool of this.connectionPool.values()) {
+      await pool.end();
     }
     this.connectionPool.clear();
   }

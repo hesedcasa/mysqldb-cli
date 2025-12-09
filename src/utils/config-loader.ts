@@ -1,18 +1,26 @@
 import fs from 'fs';
 import type { ConnectionOptions as MySQL2ConnectionOptions } from 'mysql2/promise';
 import path from 'path';
+import type { PoolConfig as PostgreSQLPoolConfig } from 'pg';
 import yaml from 'yaml';
 
 /**
- * MySQL connection profile configuration
+ * Supported database types
  */
-interface MySQLProfile {
+export type DatabaseType = 'mysql' | 'postgresql';
+
+/**
+ * Database connection profile configuration
+ */
+export interface DatabaseProfile {
+  type?: DatabaseType; // Defaults to 'mysql' for backward compatibility
   host: string;
   port: number;
   user: string;
   password: string;
   database: string;
   ssl?: boolean;
+  schema?: string; // PostgreSQL-specific: default schema (defaults to 'public')
 }
 
 /**
@@ -28,7 +36,7 @@ interface SafetyConfig {
  * Main configuration structure
  */
 export interface Config {
-  profiles: Record<string, MySQLProfile>;
+  profiles: Record<string, DatabaseProfile>;
   safety: SafetyConfig;
   defaultProfile: string;
   defaultFormat: 'table' | 'json' | 'csv' | 'toon';
@@ -37,13 +45,21 @@ export interface Config {
 /**
  * MySQL connection options for mysql2 driver
  */
-type ConnectionOptions = Pick<
+export type MySQLConnectionOptions = Pick<
   MySQL2ConnectionOptions,
   'host' | 'port' | 'user' | 'password' | 'database' | 'ssl' | 'connectTimeout' | 'multipleStatements'
 >;
 
 /**
- * Load MySQL connection profiles from .claude/mysql-connector.local.md
+ * PostgreSQL connection options for pg driver
+ */
+export type PostgreSQLConnectionOptions = Pick<
+  PostgreSQLPoolConfig,
+  'host' | 'port' | 'user' | 'password' | 'database' | 'ssl' | 'connectionTimeoutMillis'
+>;
+
+/**
+ * Load database connection profiles from .claude/mysql-connector.local.md
  *
  * @param projectRoot - Project root directory
  * @returns Configuration object with profiles and settings
@@ -77,11 +93,16 @@ export function loadConfig(projectRoot: string): Config {
 
   // Validate each profile
   for (const [profileName, profile] of Object.entries(config.profiles)) {
-    const required: Array<keyof MySQLProfile> = ['host', 'port', 'user', 'password', 'database'];
+    const required: Array<keyof DatabaseProfile> = ['host', 'port', 'user', 'password', 'database'];
     for (const field of required) {
-      if (!profile[field]) {
+      if (profile[field] === undefined || profile[field] === null) {
         throw new Error(`Profile "${profileName}" missing required field: ${field}`);
       }
+    }
+
+    // Validate database type if specified
+    if (profile.type && !['mysql', 'postgresql'].includes(profile.type)) {
+      throw new Error(`Profile "${profileName}" has invalid type: ${profile.type}. Must be 'mysql' or 'postgresql'.`);
     }
   }
 
@@ -98,13 +119,13 @@ export function loadConfig(projectRoot: string): Config {
 }
 
 /**
- * Get connection options for a specific profile
+ * Get database type for a profile (defaults to 'mysql' for backward compatibility)
  *
  * @param config - Configuration object
  * @param profileName - Profile name
- * @returns MySQL connection options
+ * @returns Database type
  */
-export function getConnectionOptions(config: Config, profileName: string): ConnectionOptions {
+export function getDatabaseType(config: Config, profileName: string): DatabaseType {
   const profile = config.profiles[profileName];
 
   if (!profile) {
@@ -112,7 +133,25 @@ export function getConnectionOptions(config: Config, profileName: string): Conne
     throw new Error(`Profile "${profileName}" not found. Available profiles: ${availableProfiles}`);
   }
 
-  const options: ConnectionOptions = {
+  return profile.type || 'mysql';
+}
+
+/**
+ * Get MySQL connection options for a specific profile
+ *
+ * @param config - Configuration object
+ * @param profileName - Profile name
+ * @returns MySQL connection options
+ */
+export function getMySQLConnectionOptions(config: Config, profileName: string): MySQLConnectionOptions {
+  const profile = config.profiles[profileName];
+
+  if (!profile) {
+    const availableProfiles = Object.keys(config.profiles).join(', ');
+    throw new Error(`Profile "${profileName}" not found. Available profiles: ${availableProfiles}`);
+  }
+
+  const options: MySQLConnectionOptions = {
     host: profile.host,
     port: profile.port,
     user: profile.user,
@@ -128,4 +167,66 @@ export function getConnectionOptions(config: Config, profileName: string): Conne
   }
 
   return options;
+}
+
+/**
+ * Get PostgreSQL connection options for a specific profile
+ *
+ * @param config - Configuration object
+ * @param profileName - Profile name
+ * @returns PostgreSQL connection options
+ */
+export function getPostgreSQLConnectionOptions(config: Config, profileName: string): PostgreSQLConnectionOptions {
+  const profile = config.profiles[profileName];
+
+  if (!profile) {
+    const availableProfiles = Object.keys(config.profiles).join(', ');
+    throw new Error(`Profile "${profileName}" not found. Available profiles: ${availableProfiles}`);
+  }
+
+  const options: PostgreSQLConnectionOptions = {
+    host: profile.host,
+    port: profile.port,
+    user: profile.user,
+    password: profile.password,
+    database: profile.database,
+    connectionTimeoutMillis: 10000,
+  };
+
+  // Only include SSL if explicitly set to true in profile
+  if (profile.ssl) {
+    options.ssl = true;
+  }
+
+  return options;
+}
+
+/**
+ * Get PostgreSQL schema for a profile (defaults to 'public')
+ *
+ * @param config - Configuration object
+ * @param profileName - Profile name
+ * @returns Schema name
+ */
+export function getPostgreSQLSchema(config: Config, profileName: string): string {
+  const profile = config.profiles[profileName];
+
+  if (!profile) {
+    const availableProfiles = Object.keys(config.profiles).join(', ');
+    throw new Error(`Profile "${profileName}" not found. Available profiles: ${availableProfiles}`);
+  }
+
+  return profile.schema || 'public';
+}
+
+/**
+ * Get connection options for a specific profile (backward compatibility)
+ * @deprecated Use getMySQLConnectionOptions or getPostgreSQLConnectionOptions instead
+ *
+ * @param config - Configuration object
+ * @param profileName - Profile name
+ * @returns MySQL connection options
+ */
+export function getConnectionOptions(config: Config, profileName: string): MySQLConnectionOptions {
+  return getMySQLConnectionOptions(config, profileName);
 }
