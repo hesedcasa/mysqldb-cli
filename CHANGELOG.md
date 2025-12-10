@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/hesedcasa/mysqldb-cli/compare/mysqldb-cli-v1.2.0...mysqldb-cli-v1.3.0) (2025-12-10)
+
+
+### 🎉 Features
+
+* add PostgreSQL database support ([#11](https://github.com/hesedcasa/mysqldb-cli/issues/11)) ([a9f0bb0](https://github.com/hesedcasa/mysqldb-cli/commit/a9f0bb0eca5499d6f9c7340a6dacce63b09912ae))
+
 ## [1.2.0](https://github.com/hesedcasa/mysqldb-cli/compare/mysqldb-cli-v1.1.0...mysqldb-cli-v1.2.0) (2025-11-27)
 
 
