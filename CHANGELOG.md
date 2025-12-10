@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/hesedcasa/mysqldb-cli/compare/mysqldb-cli-v1.3.0...mysqldb-cli-v1.3.1) (2025-12-10)
+
+
+### 🛠️ Fixes
+
+* update all params in the config file to camelCase ([b5a9d1d](https://github.com/hesedcasa/mysqldb-cli/commit/b5a9d1d9f981db97f0e3f225dd71a242459a3a9a))
+
 ## [1.3.0](https://github.com/hesedcasa/mysqldb-cli/compare/mysqldb-cli-v1.2.0...mysqldb-cli-v1.3.0) (2025-12-10)
 
 
