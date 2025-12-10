@@ -51,7 +51,7 @@ export const parseArguments = async (args: string[]): Promise<boolean> => {
  */
 const printGeneralHelp = (): void => {
   console.log(`
-MySQL CLI
+SQL CLI
 
 Usage:
 

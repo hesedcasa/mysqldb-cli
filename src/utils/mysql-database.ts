@@ -1,8 +1,11 @@
 /**
  * Direct database query execution
+ * Supports both MySQL and PostgreSQL databases based on profile configuration
  */
 import { loadConfig } from './config-loader.js';
-import { MySQLUtil } from './mysql-utils.js';
+import type { Config } from './config-loader.js';
+import type { DatabaseFactory } from './database-factory.js';
+import { createDatabaseFactory } from './database-factory.js';
 import type {
   ConnectionTestResult,
   DatabaseListResult,
@@ -11,22 +14,23 @@ import type {
   QueryResult,
   TableListResult,
   TableStructureResult,
-} from './mysql-utils.js';
+} from './database.js';
 
 const projectRoot = process.env.CLAUDE_PROJECT_ROOT || process.cwd();
 
-let dbUtil: MySQLUtil | null = null;
+let dbFactory: DatabaseFactory | null = null;
+let cachedConfig: Config | null = null;
 
 /**
- * Initialize database utility
+ * Initialize database factory
  */
-async function initDB(): Promise<MySQLUtil> {
-  if (dbUtil) return dbUtil;
+function initDB(): DatabaseFactory {
+  if (dbFactory) return dbFactory;
 
   try {
-    const config = loadConfig(projectRoot);
-    dbUtil = new MySQLUtil(config);
-    return dbUtil;
+    cachedConfig = loadConfig(projectRoot);
+    dbFactory = createDatabaseFactory(cachedConfig);
+    return dbFactory;
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     throw new Error(`Failed to initialize database: ${errorMessage}`);
@@ -44,7 +48,8 @@ export async function executeQuery(
   profile: string,
   format: 'table' | 'json' | 'csv' | 'toon' = 'table'
 ): Promise<QueryResult> {
-  const db = await initDB();
+  const factory = initDB();
+  const db = factory.getUtilForProfile(profile);
   return await db.executeQuery(profile, query, format);
 }
 
@@ -53,7 +58,8 @@ export async function executeQuery(
  * @param profile - Database profile name
  */
 export async function listDatabases(profile: string): Promise<DatabaseListResult> {
-  const db = await initDB();
+  const factory = initDB();
+  const db = factory.getUtilForProfile(profile);
   return await db.listDatabases(profile);
 }
 
@@ -62,7 +68,8 @@ export async function listDatabases(profile: string): Promise<DatabaseListResult
  * @param profile - Database profile name
  */
 export async function listTables(profile: string): Promise<TableListResult> {
-  const db = await initDB();
+  const factory = initDB();
+  const db = factory.getUtilForProfile(profile);
   return await db.listTables(profile);
 }
 
@@ -77,7 +84,8 @@ export async function describeTable(
   table: string,
   format: 'table' | 'json' | 'toon' = 'table'
 ): Promise<TableStructureResult> {
-  const db = await initDB();
+  const factory = initDB();
+  const db = factory.getUtilForProfile(profile);
   return await db.describeTable(profile, table, format);
 }
 
@@ -92,7 +100,8 @@ export async function showIndexes(
   table: string,
   format: 'table' | 'json' | 'toon' = 'table'
 ): Promise<IndexResult> {
-  const db = await initDB();
+  const factory = initDB();
+  const db = factory.getUtilForProfile(profile);
   return await db.showIndexes(profile, table, format);
 }
 
@@ -107,7 +116,8 @@ export async function explainQuery(
   query: string,
   format: 'table' | 'json' | 'toon' = 'table'
 ): Promise<ExplainResult> {
-  const db = await initDB();
+  const factory = initDB();
+  const db = factory.getUtilForProfile(profile);
   return await db.explainQuery(profile, query, format);
 }
 
@@ -116,7 +126,8 @@ export async function explainQuery(
  * @param profile - Database profile name
  */
 export async function testConnection(profile: string): Promise<ConnectionTestResult> {
-  const db = await initDB();
+  const factory = initDB();
+  const db = factory.getUtilForProfile(profile);
   return await db.testConnection(profile);
 }
 
@@ -124,8 +135,9 @@ export async function testConnection(profile: string): Promise<ConnectionTestRes
  * Close all database connections
  */
 export async function closeConnections(): Promise<void> {
-  if (dbUtil) {
-    await dbUtil.closeAll();
-    dbUtil = null;
+  if (dbFactory) {
+    await dbFactory.closeAll();
+    dbFactory = null;
+    cachedConfig = null;
   }
 }

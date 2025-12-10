@@ -11,25 +11,37 @@ import {
   testConnection,
 } from '../../src/utils/mysql-database.js';
 
+const mockConfig = {
+  profiles: {
+    test: {
+      host: 'localhost',
+      port: 3306,
+      user: 'testuser',
+      password: 'testpass',
+      database: 'testdb',
+    },
+  },
+  safety: {
+    default_limit: 100,
+    require_confirmation_for: ['DELETE', 'UPDATE', 'DROP', 'TRUNCATE', 'ALTER'],
+    blacklisted_operations: ['DROP DATABASE'],
+  },
+  defaultProfile: 'test',
+  defaultFormat: 'table' as const,
+};
+
 // Mock the config-loader module
 vi.mock('../../src/utils/config-loader.js', () => ({
-  loadConfig: vi.fn(() => ({
-    profiles: {
-      test: {
-        host: 'localhost',
-        port: 3306,
-        user: 'testuser',
-        password: 'testpass',
-        database: 'testdb',
-      },
-    },
-    safety: {
-      default_limit: 100,
-      require_confirmation_for: ['DELETE', 'UPDATE', 'DROP', 'TRUNCATE', 'ALTER'],
-      blacklisted_operations: ['DROP DATABASE'],
-    },
-    defaultProfile: 'test',
-    defaultFormat: 'table' as const,
+  loadConfig: vi.fn(() => mockConfig),
+  getDatabaseType: vi.fn(() => 'mysql'),
+  getMySQLConnectionOptions: vi.fn(() => ({
+    host: 'localhost',
+    port: 3306,
+    user: 'testuser',
+    password: 'testpass',
+    database: 'testdb',
+    connectTimeout: 10000,
+    multipleStatements: false,
   })),
 }));
 
