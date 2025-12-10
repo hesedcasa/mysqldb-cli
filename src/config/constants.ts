@@ -20,13 +20,13 @@ export const COMMANDS: string[] = [
  * Brief descriptions for each command
  */
 export const COMMANDS_INFO: string[] = [
-  'Execute a SQL query (MySQL/PostgreSQL)',
-  'List all databases (MySQL/PostgreSQL)',
-  'List all tables in current database/schema (MySQL/PostgreSQL)',
-  'Describe table structure (MySQL/PostgreSQL)',
-  'Show table indexes (MySQL/PostgreSQL)',
-  'Explain query execution plan (MySQL/PostgreSQL)',
-  'Test database connection (MySQL/PostgreSQL)',
+  'Execute a SQL query',
+  'List all databases',
+  'List all tables in current database/schema',
+  'Describe table structure',
+  'Show table indexes',
+  'Explain query execution plan',
+  'Test database connection',
 ];
 
 /**

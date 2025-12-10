@@ -105,8 +105,11 @@ tests/
   - `parseArguments(args)` - Parses CLI flags and routes execution
 - `config-loader.ts` - Configuration file management
   - `loadConfig(projectRoot)` - Loads `.claude/mysql-connector.local.md`
-  - `getConnectionOptions(config, profileName)` - Builds mysql2 connection options
-  - TypeScript interfaces: `Config`, `MySQLProfile`, `SafetyConfig`, `ConnectionOptions`
+  - `getMySQLConnectionOptions(config, profileName)` - Builds mysql2 connection options
+  - `getPostgreSQLConnectionOptions(config, profileName)` - Builds pg connection options
+  - `getDatabaseType(config, profileName)` - Returns database type for profile
+  - `getPostgreSQLSchema(config, profileName)` - Returns schema name for PostgreSQL
+  - TypeScript interfaces: `Config`, `DatabaseProfile`, `SafetyConfig`, `MySQLConnectionOptions`, `PostgreSQLConnectionOptions`
 - `mysql-database.ts` - Database operation wrapper functions
   - Exports: `executeQuery()`, `listDatabases()`, `listTables()`, `describeTable()`, `showIndexes()`, `explainQuery()`, `testConnection()`, `closeConnections()`
   - Manages singleton `MySQLUtil` instance
@@ -134,6 +137,15 @@ profiles:
     password: password
     database: mydb
 
+  postgres_local:
+    type: postgresql
+    host: localhost
+    port: 5432
+    user: postgres
+    password: password
+    database: mydb
+    schema: public
+
 safety:
   default_limit: 100
   require_confirmation_for:
@@ -159,7 +171,7 @@ defaultFormat: table
 
 ### REPL Interface
 
-- Custom prompt: `mysql>`
+- Custom prompt: `sql>`
 - **Special commands**: `help`, `commands`, `profiles`, `profile <name>`, `format <type>`, `clear`, `exit/quit/q`
 - **Database commands**: 7 commands accepting JSON arguments
   1. `query` - Execute SQL queries
@@ -218,14 +230,14 @@ The CLI provides **7 MySQL database commands**:
 npm start
 
 # Inside the REPL:
-mysql> commands                          # List all 7 commands
-mysql> help                              # Show help
-mysql> profiles                          # List available profiles
-mysql> profile production                # Switch profile
-mysql> format json                       # Change output format
-mysql> query '{"query":"SELECT * FROM users LIMIT 10"}'
-mysql> describe-table '{"table":"users"}'
-mysql> exit                              # Exit
+sql> commands                          # List all 7 commands
+sql> help                              # Show help
+sql> profiles                          # List available profiles
+sql> profile production                # Switch profile
+sql> format json                       # Change output format
+sql> query '{"query":"SELECT * FROM users LIMIT 10"}'
+sql> describe-table '{"table":"users"}'
+sql> exit                              # Exit
 
 # Headless mode (one-off commands):
 npx mysqldb-cli test-connection '{"profile":"local"}'

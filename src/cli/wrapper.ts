@@ -28,7 +28,7 @@ export class wrapper {
     this.rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
-      prompt: 'mysql> ',
+      prompt: 'sql> ',
     });
   }
 
@@ -242,7 +242,7 @@ export class wrapper {
     const commandList = COMMANDS.join(', ');
 
     console.log(`
-MySQL CLI v${version}
+SQL CLI v${version}
 
 Current Settings:
   Profile: ${currentProfile}
@@ -250,7 +250,7 @@ Current Settings:
 
 Usage:
 
-commands              list all available MySQL commands
+commands              list all available commands
 <command> -h          quick help on <command>
 <command> <arg>       run <command> with JSON argument
 profile <name>        switch to a different database profile

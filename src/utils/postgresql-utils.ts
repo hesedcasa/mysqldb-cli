@@ -324,10 +324,10 @@ export class PostgreSQLUtil implements DatabaseUtil {
       const schema = getPostgreSQLSchema(this.config, profileName);
       const result = await client.query(
         `SELECT
-          column_name as "Field",
-          data_type as "Type",
-          is_nullable as "Null",
-          column_default as "Default",
+          c.column_name as "Field",
+          c.data_type as "Type",
+          c.is_nullable as "Null",
+          c.column_default as "Default",
           CASE
             WHEN pk.column_name IS NOT NULL THEN 'PRI'
             ELSE ''

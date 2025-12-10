@@ -1,11 +1,12 @@
-# MySQL CLI
+# MySQL/PostgreSQL CLI
 
 [![npm mysqldb-cli package](https://img.shields.io/npm/v/mysqldb-cli.svg)](https://npmjs.org/package/mysqldb-cli)
 
-A powerful command-line interface for MySQL database interaction with built-in safety features and multiple output formats.
+A powerful command-line interface for MySQL and PostgreSQL database interaction with built-in safety features and multiple output formats.
 
 ## Features
 
+- 🗄️ **Multi-database support**: Works with both MySQL and PostgreSQL
 - 💻 **Interactive REPL** for database exploration and queries
 - 🚀 **Headless mode** for one-off command execution
 - 🔐 **Multi-profile support** for managing different database connections
@@ -19,7 +20,7 @@ A powerful command-line interface for MySQL database interaction with built-in s
 
 - [Node.js](https://nodejs.org/) v22.0 or newer
 - [npm](https://www.npmjs.com/)
-- MySQL 5.7+ or MySQL 8.0+
+- MySQL 5.7+ / MySQL 8.0+ or PostgreSQL 12+
 
 ## Installation
 
@@ -35,13 +36,24 @@ Create a configuration file at `.claude/mysql-connector.local.md` in your projec
 ---
 profiles:
   local:
+    type: mysql
     host: localhost
     port: 3306
     user: root
     password: password
     database: mydb
 
+  postgres_local:
+    type: postgresql
+    host: localhost
+    port: 5432
+    user: postgres
+    password: password
+    database: mydb
+    schema: public
+
   production:
+    type: mysql
     host: prod.example.com
     port: 3306
     user: app_user
@@ -64,20 +76,22 @@ defaultProfile: local
 defaultFormat: table
 ---
 
-# MySQL Connection Profiles
+# Database Connection Profiles
 
-This file stores your MySQL database connection profiles.
+This file stores your MySQL and PostgreSQL database connection profiles.
 ```
 
 ### Configuration Options
 
 - **profiles**: Named database connection profiles
+  - `type`: Database type - `mysql` or `postgresql` (optional, defaults to `mysql` for backward compatibility)
   - `host`: Database server hostname or IP
-  - `port`: MySQL port (default: 3306)
+  - `port`: Database port (MySQL: 3306, PostgreSQL: 5432)
   - `user`: Database username
   - `password`: Database password
   - `database`: Default database name
   - `ssl`: Enable SSL connection (optional)
+  - `schema`: PostgreSQL schema name (optional, defaults to `public`, PostgreSQL only)
 
 - **safety**: Query safety settings
   - `default_limit`: Default row limit for SELECT queries
@@ -91,13 +105,13 @@ This file stores your MySQL database connection profiles.
 
 ### Interactive Mode
 
-Start the CLI and interact with MySQL through a REPL:
+Start the CLI and interact with your database through a REPL:
 
 ```bash
 npx mysqldb-cli
 ```
 
-Once started, you'll see the `mysql>` prompt:
+Once started, you'll see the `sql>` (or `postgres>` for PostgreSQL profiles) prompt:
 
 ```
 MySQL CLI v1.0.0
@@ -111,7 +125,7 @@ commands         list all available commands
 clear            clear the screen
 exit, quit, q    exit the CLI
 
-mysql> commands
+sql> commands
 Available commands:
   query              Execute a SQL query
   list-databases     List all databases
@@ -121,13 +135,13 @@ Available commands:
   explain-query      Explain query execution plan
   test-connection    Test database connection
 
-mysql> list-tables
+sql> list-tables
 Tables in database 'mydb':
   - users
   - posts
   - comments
 
-mysql> describe-table '{"table":"users"}'
+sql> describe-table '{"table":"users"}'
 Table: users
 ┌────────────┬──────────────┬──────┬─────┬─────────┬──────────────────┐
 │ Field      │ Type         │ Null │ Key │ Default │ Extra            │
@@ -138,7 +152,7 @@ Table: users
 │ created_at │ timestamp    │ YES  │     │ NULL    │                  │
 └────────────┴──────────────┴──────┴─────┴─────────┴──────────────────┘
 
-mysql> query '{"query":"SELECT * FROM users LIMIT 5"}'
+sql> query '{"query":"SELECT * FROM users LIMIT 5"}'
 ┌────┬──────────┬────────────────────┬─────────────────────┐
 │ id │ username │ email              │ created_at          │
 ├────┼──────────┼────────────────────┼─────────────────────┤
@@ -147,7 +161,7 @@ mysql> query '{"query":"SELECT * FROM users LIMIT 5"}'
 │ 3  │ charlie  │ charlie@example.com│ 2025-01-17 09:15:00 │
 └────┴──────────┴────────────────────┴─────────────────────┘
 
-mysql> exit
+sql> exit
 ```
 
 ### Headless Mode
@@ -188,7 +202,7 @@ npx mysqldb-cli -h
 
 ## Available Commands
 
-The CLI provides **7 MySQL database commands**:
+The CLI provides **7 database commands** that work with both MySQL and PostgreSQL:
 
 ### query
 
@@ -204,9 +218,9 @@ Execute a SQL query on the database.
 
 ```bash
 # Interactive mode
-mysql> query '{"query":"SELECT * FROM users LIMIT 10"}'
-mysql> query '{"query":"SELECT * FROM users","format":"json"}'
-mysql> query '{"query":"SELECT * FROM users","profile":"production","format":"csv"}'
+sql> query '{"query":"SELECT * FROM users LIMIT 10"}'
+sql> query '{"query":"SELECT * FROM users","format":"json"}'
+sql> query '{"query":"SELECT * FROM users","profile":"production","format":"csv"}'
 
 # Headless mode
 npx mysqldb-cli query '{"query":"SELECT * FROM users LIMIT 10"}'
@@ -225,8 +239,8 @@ List all databases accessible with the current credentials.
 
 ```bash
 # Interactive mode
-mysql> list-databases
-mysql> list-databases '{"profile":"production"}'
+sql> list-databases
+sql> list-databases '{"profile":"production"}'
 
 # Headless mode
 npx mysqldb-cli list-databases
@@ -245,8 +259,8 @@ List all tables in the current database.
 
 ```bash
 # Interactive mode
-mysql> list-tables
-mysql> list-tables '{"profile":"local"}'
+sql> list-tables
+sql> list-tables '{"profile":"local"}'
 
 # Headless mode
 npx mysqldb-cli list-tables
@@ -267,8 +281,8 @@ Show the structure of a specific table (columns, types, keys, etc.).
 
 ```bash
 # Interactive mode
-mysql> describe-table '{"table":"users","format":"json"}'
-mysql> describe-table '{"table":"posts","profile":"production"}'
+sql> describe-table '{"table":"users","format":"json"}'
+sql> describe-table '{"table":"posts","profile":"production"}'
 
 # Headless mode
 npx mysqldb-cli describe-table '{"table":"users","format":"toon"}'
@@ -289,8 +303,8 @@ Display all indexes for a specific table.
 
 ```bash
 # Interactive mode
-mysql> show-indexes '{"table":"users","format":"json"}'
-mysql> show-indexes '{"table":"posts","profile":"local"}'
+sql> show-indexes '{"table":"users","format":"json"}'
+sql> show-indexes '{"table":"posts","profile":"local"}'
 
 # Headless mode
 npx mysqldb-cli show-indexes '{"table":"users","format":"toon"}'
@@ -311,8 +325,8 @@ Show the execution plan for a SQL query (useful for performance optimization).
 
 ```bash
 # Interactive mode
-mysql> explain-query '{"query":"SELECT * FROM users WHERE email = 'alice@example.com'","format":"json"}'
-mysql> explain-query '{"query":"SELECT u.*, p.* FROM users u JOIN posts p ON u.id = p.user_id"}'
+sql> explain-query '{"query":"SELECT * FROM users WHERE email = 'alice@example.com'","format":"json"}'
+sql> explain-query '{"query":"SELECT u.*, p.* FROM users u JOIN posts p ON u.id = p.user_id"}'
 
 # Headless mode
 npx mysqldb-cli explain-query '{"query":"SELECT * FROM users WHERE id = 1","format":"toon"}'
@@ -331,8 +345,8 @@ Test the connection to a specific database profile.
 
 ```bash
 # Interactive mode
-mysql> test-connection
-mysql> test-connection '{"profile":"production"}'
+sql> test-connection
+sql> test-connection '{"profile":"production"}'
 
 # Headless mode
 npx mysqldb-cli test-connection
@@ -383,13 +397,14 @@ id,username,email
 
 ## Safety Features
 
-The CLI includes built-in safety features to prevent accidental data loss:
+The CLI includes built-in safety features to prevent accidental data loss across both MySQL and PostgreSQL:
 
 1. **Confirmation Required**: Destructive operations (DELETE, UPDATE, DROP, TRUNCATE, ALTER) require confirmation in interactive mode
 2. **Blacklisted Operations**: Certain dangerous operations (like DROP DATABASE) are completely blocked
-3. **No Multiple Statements**: Prevents SQL injection via multiple statement execution
+3. **No Multiple Statements**: Prevents SQL injection via multiple statement execution (MySQL)
 4. **Connection Timeout**: 10-second timeout prevents hanging connections
 5. **Query Validation**: Validates queries before execution
+6. **Default Row Limits**: Automatically applies LIMIT clauses to unbounded SELECT queries
 
 ## Use Cases
 
@@ -400,10 +415,10 @@ The CLI includes built-in safety features to prevent accidental data loss:
 npx mysqldb-cli
 
 # Explore the database
-mysql> list-databases
-mysql> list-tables
-mysql> describe-table '{"table":"users"}'
-mysql> show-indexes '{"table":"users"}'
+sql> list-databases
+sql> list-tables
+sql> describe-table '{"table":"users"}'
+sql> show-indexes '{"table":"users"}'
 ```
 
 ### Quick Queries
@@ -423,10 +438,10 @@ npx mysqldb-cli query '{"query":"SELECT * FROM products","format":"json"}' > pro
 
 ```bash
 # Analyze query performance
-mysql> explain-query '{"query":"SELECT * FROM users WHERE email = 'test@example.com'"}'
+sql> explain-query '{"query":"SELECT * FROM users WHERE email = 'test@example.com'"}'
 
 # Check if indexes are being used
-mysql> show-indexes '{"table":"users"}'
+sql> show-indexes '{"table":"users"}'
 ```
 
 ### Multi-Environment Management
@@ -435,12 +450,15 @@ mysql> show-indexes '{"table":"users"}'
 # Test production connection
 npx mysqldb-cli test-connection '{"profile":"production"}'
 
-# Compare table structures
+# Compare table structures across different databases
 npx mysqldb-cli describe-table '{"table":"users","profile":"local"}'
-npx mysqldb-cli describe-table '{"table":"users","profile":"production"}'
+npx mysqldb-cli describe-table '{"table":"users","profile":"postgres_local"}'
 
 # Check production data
 npx mysqldb-cli query '{"query":"SELECT COUNT(*) FROM users","profile":"production"}'
+
+# Work with PostgreSQL schemas
+npx mysqldb-cli list-tables '{"profile":"postgres_local"}'
 ```
 
 ## Development

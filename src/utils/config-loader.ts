@@ -12,7 +12,7 @@ export type DatabaseType = 'mysql' | 'postgresql';
 /**
  * Database connection profile configuration
  */
-export interface DatabaseProfile {
+interface DatabaseProfile {
   type?: DatabaseType; // Defaults to 'mysql' for backward compatibility
   host: string;
   port: number;
@@ -45,7 +45,7 @@ export interface Config {
 /**
  * MySQL connection options for mysql2 driver
  */
-export type MySQLConnectionOptions = Pick<
+type MySQLConnectionOptions = Pick<
   MySQL2ConnectionOptions,
   'host' | 'port' | 'user' | 'password' | 'database' | 'ssl' | 'connectTimeout' | 'multipleStatements'
 >;
@@ -53,7 +53,7 @@ export type MySQLConnectionOptions = Pick<
 /**
  * PostgreSQL connection options for pg driver
  */
-export type PostgreSQLConnectionOptions = Pick<
+type PostgreSQLConnectionOptions = Pick<
   PostgreSQLPoolConfig,
   'host' | 'port' | 'user' | 'password' | 'database' | 'ssl' | 'connectionTimeoutMillis'
 >;
@@ -217,16 +217,4 @@ export function getPostgreSQLSchema(config: Config, profileName: string): string
   }
 
   return profile.schema || 'public';
-}
-
-/**
- * Get connection options for a specific profile (backward compatibility)
- * @deprecated Use getMySQLConnectionOptions or getPostgreSQLConnectionOptions instead
- *
- * @param config - Configuration object
- * @param profileName - Profile name
- * @returns MySQL connection options
- */
-export function getConnectionOptions(config: Config, profileName: string): MySQLConnectionOptions {
-  return getMySQLConnectionOptions(config, profileName);
 }

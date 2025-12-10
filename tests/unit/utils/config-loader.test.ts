@@ -3,7 +3,7 @@ import os from 'os';
 import path from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { getConnectionOptions, loadConfig } from '../../../src/utils/config-loader.js';
+import { getMySQLConnectionOptions, loadConfig } from '../../../src/utils/config-loader.js';
 import type { Config } from '../../../src/utils/config-loader.js';
 
 describe('config-loader', () => {
@@ -221,7 +221,7 @@ profiles:
     });
   });
 
-  describe('getConnectionOptions', () => {
+  describe('getMySQLConnectionOptions', () => {
     let config: Config;
 
     beforeEach(() => {
@@ -250,7 +250,7 @@ profiles:
     });
 
     it('should return correct connection options for profile', () => {
-      const options = getConnectionOptions(config, 'local');
+      const options = getMySQLConnectionOptions(config, 'local');
 
       expect(options.host).toBe('localhost');
       expect(options.port).toBe(3306);
@@ -263,24 +263,24 @@ profiles:
     });
 
     it('should handle ssl option correctly', () => {
-      const options = getConnectionOptions(config, 'secure');
+      const options = getMySQLConnectionOptions(config, 'secure');
 
       expect(options.ssl).toEqual({});
     });
 
     it('should not include ssl if not specified in profile', () => {
-      const options = getConnectionOptions(config, 'local');
+      const options = getMySQLConnectionOptions(config, 'local');
 
       expect(options.ssl).toBeUndefined();
     });
 
     it('should throw error for non-existent profile', () => {
-      expect(() => getConnectionOptions(config, 'nonexistent')).toThrow('Profile "nonexistent" not found');
+      expect(() => getMySQLConnectionOptions(config, 'nonexistent')).toThrow('Profile "nonexistent" not found');
     });
 
     it('should list available profiles in error message', () => {
       try {
-        getConnectionOptions(config, 'nonexistent');
+        getMySQLConnectionOptions(config, 'nonexistent');
         expect.fail('Should have thrown error');
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : String(error);
@@ -291,12 +291,12 @@ profiles:
     });
 
     it('should always set connectTimeout to 10000', () => {
-      const options = getConnectionOptions(config, 'local');
+      const options = getMySQLConnectionOptions(config, 'local');
       expect(options.connectTimeout).toBe(10000);
     });
 
     it('should always set multipleStatements to false for security', () => {
-      const options = getConnectionOptions(config, 'local');
+      const options = getMySQLConnectionOptions(config, 'local');
       expect(options.multipleStatements).toBe(false);
     });
   });
