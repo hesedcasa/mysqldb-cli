@@ -10,4 +10,4 @@ export {
   explainQuery,
   testConnection,
   closeConnections,
-} from './mysql-database.js';
+} from './sql-database.js';

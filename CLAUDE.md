@@ -31,7 +31,7 @@ npm run pre-commit          # Run format + find-deadcode
 
 ## Project Architecture
 
-This is a **MySQL CLI tool** that provides both interactive REPL and headless modes for database operations with built-in safety features.
+This is a **SQL CLI tool** that provides both interactive REPL and headless modes for database operations with built-in safety features.
 
 ### Project Structure
 
@@ -40,30 +40,35 @@ src/
 ├── index.ts (29 lines)                    # Main entry point
 ├── cli/
 │   ├── index.ts                           # Barrel export
-│   └── wrapper.ts (319 lines)             # CLI class with REPL logic
+│   └── wrapper.ts (315 lines)             # CLI class with REPL logic
 ├── commands/
 │   ├── index.ts                           # Barrel export
-│   ├── helpers.ts (45 lines)              # Command info helpers
-│   └── runner.ts (105 lines)              # Headless command execution
+│   ├── helpers.ts (46 lines)              # Command info helpers
+│   └── runner.ts (106 lines)              # Headless command execution
 ├── config/
 │   ├── index.ts                           # Barrel export
-│   └── constants.ts (83 lines)            # Command definitions
+│   └── constants.ts (113 lines)           # Command definitions
 └── utils/
     ├── index.ts                           # Barrel export
-    ├── argParser.ts (74 lines)            # Command-line argument parser
-    ├── config-loader.ts (135 lines)       # YAML config file loader
-    ├── mysql-database.ts (117 lines)      # Database operation wrapper
-    ├── mysql-utils.ts                     # Core MySQL utility class
-    └── query-validator.ts (133 lines)     # SQL safety validation
+    ├── argParser.ts (75 lines)            # Command-line argument parser
+    ├── config-loader.ts (221 lines)       # YAML config file loader
+    ├── database.ts (143 lines)            # Database interface definitions
+    ├── database-factory.ts (93 lines)     # Database factory pattern
+    ├── sql-database.ts (144 lines)        # Database operation facade
+    ├── mysql-utils.ts (432 lines)         # MySQL implementation
+    ├── postgresql-utils.ts (502 lines)    # PostgreSQL implementation
+    └── query-validator.ts (141 lines)     # SQL safety validation
 
 tests/
 ├── unit/
 │   └── utils/
 │       ├── config-loader.test.ts          # Tests for config loading
+│       ├── database-factory.test.ts       # Tests for database factory
 │       ├── mysql-utils.test.ts            # Tests for MySQL utilities
+│       ├── postgresql-utils.test.ts       # Tests for PostgreSQL utilities
 │       └── query-validator.test.ts        # Tests for query validation
 └── integration/
-    └── mysql-database.test.ts             # Integration tests for database ops
+    └── sql-database.test.ts               # Integration tests for database ops
 ```
 
 ### Core Components
@@ -77,7 +82,7 @@ tests/
 #### CLI Module (`src/cli/`)
 
 - **wrapper class**: Main orchestrator managing:
-  - `connect()` - Loads configuration from `.claude/mysql-connector.local.md`
+  - `connect()` - Loads configuration from `.claude/sql-config.local.md`
   - `start()` - Initiates interactive REPL with readline interface
   - `handleCommand()` - Parses and processes user commands
   - `runCommand()` - Executes MySQL commands with result formatting
@@ -104,18 +109,36 @@ tests/
 - `argParser.ts` - Command-line argument handling
   - `parseArguments(args)` - Parses CLI flags and routes execution
 - `config-loader.ts` - Configuration file management
-  - `loadConfig(projectRoot)` - Loads `.claude/mysql-connector.local.md`
+  - `loadConfig(projectRoot)` - Loads `.claude/sql-config.local.md`
   - `getMySQLConnectionOptions(config, profileName)` - Builds mysql2 connection options
   - `getPostgreSQLConnectionOptions(config, profileName)` - Builds pg connection options
   - `getDatabaseType(config, profileName)` - Returns database type for profile
   - `getPostgreSQLSchema(config, profileName)` - Returns schema name for PostgreSQL
   - TypeScript interfaces: `Config`, `DatabaseProfile`, `SafetyConfig`, `MySQLConnectionOptions`, `PostgreSQLConnectionOptions`
-- `mysql-database.ts` - Database operation wrapper functions
+- `database.ts` - Database abstraction layer
+  - `DatabaseUtil` interface - Contract for all database implementations
+  - Result types: `QueryResult`, `DatabaseListResult`, `TableListResult`, `TableStructureResult`, `IndexResult`, `ExplainResult`, `ConnectionTestResult`
+  - `OutputFormat` type - 'table', 'json', 'csv', or 'toon'
+- `database-factory.ts` - Database factory pattern
+  - `DatabaseFactory` class - Creates and manages database utilities based on profile configuration
+  - `getUtilForProfile(profileName)` - Returns appropriate database utility (MySQL or PostgreSQL)
+  - `getUtilForType(dbType)` - Returns utility for specific database type
+  - `closeAll()` - Closes all database connections
+  - Supports mixed MySQL and PostgreSQL profiles in the same configuration
+- `sql-database.ts` - Database operation facade
   - Exports: `executeQuery()`, `listDatabases()`, `listTables()`, `describeTable()`, `showIndexes()`, `explainQuery()`, `testConnection()`, `closeConnections()`
-  - Manages singleton `MySQLUtil` instance
-- `mysql-utils.ts` - Core MySQL utility class
-  - `MySQLUtil` class - Connection pooling and query execution
+  - Manages singleton `DatabaseFactory` instance
+  - Routes commands to appropriate database implementation (MySQL or PostgreSQL)
+- `mysql-utils.ts` - MySQL implementation
+  - `MySQLUtil` class implementing `DatabaseUtil` interface
+  - Connection pooling per profile using mysql2
   - Implements all 7 database commands with safety validation
+  - Formats results as table, JSON, CSV or TOON
+- `postgresql-utils.ts` - PostgreSQL implementation
+  - `PostgreSQLUtil` class implementing `DatabaseUtil` interface
+  - Connection pooling per profile using pg
+  - Implements all 7 database commands with safety validation
+  - Schema-aware queries (defaults to 'public')
   - Formats results as table, JSON, CSV or TOON
 - `query-validator.ts` - SQL safety validation
   - `checkBlacklist()` - Blocks dangerous operations (e.g., DROP DATABASE)
@@ -125,7 +148,7 @@ tests/
 
 ### Configuration System
 
-The CLI loads database profiles from `.claude/mysql-connector.local.md` with YAML frontmatter:
+The CLI loads database profiles from `.claude/sql-config.local.md` with YAML frontmatter:
 
 ```yaml
 ---
@@ -147,14 +170,14 @@ profiles:
     schema: public
 
 safety:
-  default_limit: 100
-  require_confirmation_for:
+  defaultLimit: 100
+  requireConfirmationFor:
     - DELETE
     - UPDATE
     - DROP
     - TRUNCATE
     - ALTER
-  blacklisted_operations:
+  blacklistedOperations:
     - DROP DATABASE
 
 defaultProfile: local
@@ -211,9 +234,37 @@ defaultFormat: table
 - **Declarations**: Generates `.d.ts` files for all modules
 - **Source Maps**: Enabled for debugging
 
+## Architecture Patterns
+
+The codebase uses several design patterns to support multiple database types:
+
+### 1. Factory Pattern
+
+- **Location**: `database-factory.ts`
+- **Purpose**: Creates appropriate database utility (MySQL or PostgreSQL) based on profile configuration
+- **Benefits**: Single point of instantiation, lazy loading, supports mixed database types in one config
+
+### 2. Strategy Pattern
+
+- **Location**: `database.ts` interface with `mysql-utils.ts` and `postgresql-utils.ts` implementations
+- **Purpose**: Different database implementations that share a common interface
+- **Benefits**: Easy to add new database types, interchangeable at runtime
+
+### 3. Facade Pattern
+
+- **Location**: `sql-database.ts`
+- **Purpose**: Simple async functions that hide the complexity of factory and utility management
+- **Benefits**: Clean API for CLI, manages global state internally
+
+### 4. Connection Pooling
+
+- **MySQL**: Individual connections per profile stored in Map
+- **PostgreSQL**: Connection pools per profile stored in Map
+- **Benefits**: Reuses connections efficiently, isolates profiles
+
 ## Available Commands
 
-The CLI provides **7 MySQL database commands**:
+The CLI provides **7 database commands** that work with both MySQL and PostgreSQL:
 
 1. **query** - Execute SQL query with optional format (table/json/csv/toon)
 2. **list-databases** - List all accessible databases
@@ -285,25 +336,48 @@ npx mysqldb-cli --version         # Show version
 
 ### Config Loader (`utils/config-loader.ts`)
 
-- Reads and parses `.claude/mysql-connector.local.md`
+- Reads and parses `.claude/sql-config.local.md`
 - Extracts YAML frontmatter with database profiles
 - Validates required fields for each profile
 - Provides default values for safety settings
 - Builds mysql2 connection options
 
-### MySQL Database (`utils/mysql-database.ts`)
+### Database Abstraction (`utils/database.ts`)
+
+- TypeScript interfaces for all result types
+- `DatabaseUtil` interface defining the contract for database implementations
+- Output format types and shared type definitions
+
+### Database Factory (`utils/database-factory.ts`)
+
+- Creates and manages database utilities
+- Lazy initialization of MySQL and PostgreSQL utilities
+- Routes profile requests to correct database type
+- Supports mixed MySQL and PostgreSQL profiles
+
+### Database Facade (`utils/sql-database.ts`)
 
 - Wrapper functions for all database operations
-- Manages singleton MySQLUtil instance
+- Manages singleton DatabaseFactory instance
 - Exports clean async functions for each command
+- Routes to appropriate database implementation
 
-### MySQL Utils (`utils/mysql-utils.ts`)
+### MySQL Implementation (`utils/mysql-utils.ts`)
 
-- Core database interaction logic
-- Connection pooling per profile
+- Implements DatabaseUtil interface
+- Connection pooling per profile using mysql2
 - Query execution with safety validation
 - Result formatting (table, JSON, CSV, TOON)
-- All 7 command implementations
+- All 7 command implementations for MySQL
+
+### PostgreSQL Implementation (`utils/postgresql-utils.ts`)
+
+- Implements DatabaseUtil interface
+- Connection pooling per profile using pg
+- Schema-aware query execution
+- Result formatting (table, JSON, CSV, TOON)
+- All 7 command implementations for PostgreSQL
+- Uses parameterized queries for safety
 
 ### Query Validator (`utils/query-validator.ts`)
 
@@ -326,13 +400,15 @@ npx mysqldb-cli --version         # Show version
 - **Connection Pooling**: Reuses connections per profile for efficiency
 - **Signal Handling**: Graceful shutdown on Ctrl+C (SIGINT) and SIGTERM
 - **Error Handling**: Try-catch blocks with user-friendly error messages
-- **Configuration**: YAML frontmatter in `.claude/mysql-connector.local.md`
+- **Configuration**: YAML frontmatter in `.claude/sql-config.local.md`
 
 ## Dependencies
 
 **Runtime**:
 
 - `mysql2@^3.15.3` - MySQL client for Node.js
+- `pg@^8.13.1` - PostgreSQL client for Node.js
+- `@toon-format/toon@^2.0.0` - TOON format output
 - `yaml@^2.8.1` - YAML parser for config files
 
 **Development**:
@@ -340,9 +416,13 @@ npx mysqldb-cli --version         # Show version
 - `typescript@^5.0.0` - TypeScript compiler
 - `tsx@^4.0.0` - TypeScript execution runtime
 - `vitest@^4.0.9` - Test framework
+- `@vitest/coverage-v8@^4.0.9` - Coverage reporting
+- `@vitest/ui@^4.0.9` - Test UI
 - `eslint@^9.39.1` - Linting
-- `prettier@3.6.2` - Code formatting
+- `prettier@3.7.4` - Code formatting
 - `ts-prune@^0.10.3` - Find unused exports
+- `@types/node@^24.10.1` - Node.js type definitions
+- `@types/pg@^8.11.10` - PostgreSQL type definitions
 
 ## Testing
 
@@ -375,20 +455,24 @@ tests/
 ├── unit/
 │   └── utils/
 │       ├── config-loader.test.ts      # Config loading and validation
+│       ├── database-factory.test.ts   # Database factory tests
 │       ├── mysql-utils.test.ts        # MySQL utility functions
+│       ├── postgresql-utils.test.ts   # PostgreSQL utility functions
 │       └── query-validator.test.ts    # Query safety validation
 └── integration/
-    └── mysql-database.test.ts         # Database operations end-to-end
+    └── sql-database.test.ts           # Database operations end-to-end
 ```
 
 ## Important Notes
 
-1. **Configuration Required**: CLI requires `.claude/mysql-connector.local.md` with valid database profiles
+1. **Configuration Required**: CLI requires `.claude/sql-config.local.md` with valid database profiles
 2. **ES2022 Modules**: Project uses `"type": "module"` - no CommonJS
 3. **Safety First**: Built-in protections prevent accidental data loss
-4. **Multi-Profile**: Supports multiple database environments (local, production, etc.)
-5. **Flexible Output**: Table, JSON, CSV or TOON formats for different use cases
-6. **Connection Pooling**: Reuses connections per profile for better performance
+4. **Multi-Database**: Supports both MySQL and PostgreSQL with the same interface
+5. **Multi-Profile**: Supports multiple database environments (local, production, etc.) with mixed database types
+6. **Flexible Output**: Table, JSON, CSV or TOON formats for different use cases
+7. **Connection Pooling**: Reuses connections per profile for better performance
+8. **Factory Pattern**: Database utilities are created on-demand based on profile configuration
 
 ## Commit Message Convention
 

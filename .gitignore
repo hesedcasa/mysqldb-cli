@@ -10,7 +10,7 @@ build/
 .env
 .env.local
 .env.*.local
-mysql-connector.local.md
+*.local.md
 
 # Logs
 logs/

@@ -27,9 +27,9 @@ interface DatabaseProfile {
  * Safety configuration for query execution
  */
 interface SafetyConfig {
-  default_limit: number;
-  require_confirmation_for: string[];
-  blacklisted_operations: string[];
+  defaultLimit: number;
+  requireConfirmationFor: string[];
+  blacklistedOperations: string[];
 }
 
 /**
@@ -59,18 +59,18 @@ type PostgreSQLConnectionOptions = Pick<
 >;
 
 /**
- * Load database connection profiles from .claude/mysql-connector.local.md
+ * Load database connection profiles from .claude/sql-config.local.md
  *
  * @param projectRoot - Project root directory
  * @returns Configuration object with profiles and settings
  */
 export function loadConfig(projectRoot: string): Config {
-  const configPath = path.join(projectRoot, '.claude', 'mysql-connector.local.md');
+  const configPath = path.join(projectRoot, '.claude', 'sql-config.local.md');
 
   if (!fs.existsSync(configPath)) {
     throw new Error(
       `Configuration file not found at ${configPath}\n` +
-        `Please create .claude/mysql-connector.local.md with your database profiles.`
+        `Please create .claude/sql-config.local.md with your database profiles.`
     );
   }
 
@@ -109,9 +109,9 @@ export function loadConfig(projectRoot: string): Config {
   return {
     profiles: config.profiles,
     safety: config.safety || {
-      default_limit: 100,
-      require_confirmation_for: ['DELETE', 'UPDATE', 'DROP', 'TRUNCATE', 'ALTER'],
-      blacklisted_operations: ['DROP DATABASE'],
+      defaultLimit: 100,
+      requireConfirmationFor: ['DELETE', 'UPDATE', 'DROP', 'TRUNCATE', 'ALTER'],
+      blacklistedOperations: ['DROP DATABASE'],
     },
     defaultProfile: config.defaultProfile || Object.keys(config.profiles)[0],
     defaultFormat: config.defaultFormat || 'table',

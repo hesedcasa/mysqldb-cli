@@ -9,7 +9,7 @@ import {
   listTables,
   showIndexes,
   testConnection,
-} from '../../src/utils/mysql-database.js';
+} from '../../src/utils/sql-database.js';
 
 const mockConfig = {
   profiles: {
@@ -22,9 +22,9 @@ const mockConfig = {
     },
   },
   safety: {
-    default_limit: 100,
-    require_confirmation_for: ['DELETE', 'UPDATE', 'DROP', 'TRUNCATE', 'ALTER'],
-    blacklisted_operations: ['DROP DATABASE'],
+    defaultLimit: 100,
+    requireConfirmationFor: ['DELETE', 'UPDATE', 'DROP', 'TRUNCATE', 'ALTER'],
+    blacklistedOperations: ['DROP DATABASE'],
   },
   defaultProfile: 'test',
   defaultFormat: 'table' as const,
@@ -45,7 +45,7 @@ vi.mock('../../src/utils/config-loader.js', () => ({
   })),
 }));
 
-describe('mysql-database (integration)', () => {
+describe('sql-database (integration)', () => {
   afterEach(async () => {
     // Close connections after each test
     await closeConnections();

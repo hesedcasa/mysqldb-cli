@@ -164,7 +164,7 @@ export class PostgreSQLUtil implements DatabaseUtil {
    */
   async executeQuery(profileName: string, query: string, format: OutputFormat = 'table'): Promise<QueryResult> {
     // Validate query against blacklist
-    const blacklistCheck = checkBlacklist(query, this.config.safety.blacklisted_operations);
+    const blacklistCheck = checkBlacklist(query, this.config.safety.blacklistedOperations);
     if (!blacklistCheck.allowed) {
       return {
         success: false,
@@ -173,7 +173,7 @@ export class PostgreSQLUtil implements DatabaseUtil {
     }
 
     // Check if confirmation required
-    const confirmationCheck = requiresConfirmation(query, this.config.safety.require_confirmation_for);
+    const confirmationCheck = requiresConfirmation(query, this.config.safety.requireConfirmationFor);
     if (confirmationCheck.required) {
       return {
         success: false,
@@ -196,9 +196,9 @@ export class PostgreSQLUtil implements DatabaseUtil {
     let finalQuery = query;
     const queryType = getQueryType(query);
     if (queryType === 'SELECT') {
-      finalQuery = applyDefaultLimit(query, this.config.safety.default_limit);
+      finalQuery = applyDefaultLimit(query, this.config.safety.defaultLimit);
       if (finalQuery !== query) {
-        warningText += `\u2139\ufe0f  Applied default LIMIT ${this.config.safety.default_limit}\n\n`;
+        warningText += `\u2139\ufe0f  Applied default LIMIT ${this.config.safety.defaultLimit}\n\n`;
       }
     }
 

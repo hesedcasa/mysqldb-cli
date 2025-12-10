@@ -47,7 +47,7 @@ export class wrapper {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error('Failed to load configuration:', errorMessage);
       console.error('\nMake sure:');
-      console.error('1. .claude/mysql-connector.local.md exists');
+      console.error('1. .claude/sql-config.local.md exists');
       console.error('2. The file contains valid database profiles in YAML frontmatter');
       process.exit(1);
     }

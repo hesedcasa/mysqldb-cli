@@ -30,7 +30,7 @@ npm install -g mysqldb-cli
 
 ## Configuration
 
-Create a configuration file at `.claude/mysql-connector.local.md` in your project root:
+Create a configuration file at `.claude/sql-config.local.md` in your project root:
 
 ```markdown
 ---
@@ -62,14 +62,14 @@ profiles:
     ssl: true
 
 safety:
-  default_limit: 100
-  require_confirmation_for:
+  defaultLimit: 100
+  requireConfirmationFor:
     - DELETE
     - UPDATE
     - DROP
     - TRUNCATE
     - ALTER
-  blacklisted_operations:
+  blacklistedOperations:
     - DROP DATABASE
 
 defaultProfile: local
@@ -94,9 +94,9 @@ This file stores your MySQL and PostgreSQL database connection profiles.
   - `schema`: PostgreSQL schema name (optional, defaults to `public`, PostgreSQL only)
 
 - **safety**: Query safety settings
-  - `default_limit`: Default row limit for SELECT queries
-  - `require_confirmation_for`: Operations requiring confirmation in interactive mode
-  - `blacklisted_operations`: Completely blocked operations
+  - `defaultLimit`: Default row limit for SELECT queries
+  - `requireConfirmationFor`: Operations requiring confirmation in interactive mode
+  - `blacklistedOperations`: Completely blocked operations
 
 - **defaultProfile**: Profile name to use when none specified
 - **defaultFormat**: Default output format (`table`, `json`, `csv` or `toon`)
@@ -111,10 +111,10 @@ Start the CLI and interact with your database through a REPL:
 npx mysqldb-cli
 ```
 
-Once started, you'll see the `sql>` (or `postgres>` for PostgreSQL profiles) prompt:
+Once started, you'll see the `sql>` prompt:
 
 ```
-MySQL CLI v1.0.0
+SQL CLI v1.0.0
 Connected to profile: local
 
 Usage:
@@ -401,10 +401,10 @@ The CLI includes built-in safety features to prevent accidental data loss across
 
 1. **Confirmation Required**: Destructive operations (DELETE, UPDATE, DROP, TRUNCATE, ALTER) require confirmation in interactive mode
 2. **Blacklisted Operations**: Certain dangerous operations (like DROP DATABASE) are completely blocked
-3. **No Multiple Statements**: Prevents SQL injection via multiple statement execution (MySQL)
+3. **Query Validation**: Validates queries before execution with safety checks
 4. **Connection Timeout**: 10-second timeout prevents hanging connections
-5. **Query Validation**: Validates queries before execution
-6. **Default Row Limits**: Automatically applies LIMIT clauses to unbounded SELECT queries
+5. **Default Row Limits**: Automatically applies LIMIT clauses to unbounded SELECT queries
+6. **Parameterized Queries**: PostgreSQL uses parameterized queries for additional safety
 
 ## Use Cases
 

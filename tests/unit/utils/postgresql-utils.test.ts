@@ -52,9 +52,9 @@ describe('PostgreSQLUtil', () => {
         },
       },
       safety: {
-        default_limit: 100,
-        require_confirmation_for: ['DELETE', 'UPDATE', 'DROP', 'TRUNCATE', 'ALTER'],
-        blacklisted_operations: ['DROP DATABASE'],
+        defaultLimit: 100,
+        requireConfirmationFor: ['DELETE', 'UPDATE', 'DROP', 'TRUNCATE', 'ALTER'],
+        blacklistedOperations: ['DROP DATABASE'],
       },
       defaultProfile: 'test',
       defaultFormat: 'table',

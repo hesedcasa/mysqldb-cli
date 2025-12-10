@@ -38,12 +38,12 @@ profiles:
     database: proddb
     ssl: true
 safety:
-  default_limit: 50
-  require_confirmation_for:
+  defaultLimit: 50
+  requireConfirmationFor:
     - DELETE
     - UPDATE
     - DROP
-  blacklisted_operations:
+  blacklistedOperations:
     - DROP DATABASE
 defaultProfile: local
 defaultFormat: table
@@ -52,7 +52,7 @@ defaultFormat: table
 # MySQL Connection Profiles
 `;
 
-      const configPath = path.join(testDir, '.claude', 'mysql-connector.local.md');
+      const configPath = path.join(testDir, '.claude', 'sql-config.local.md');
       fs.writeFileSync(configPath, configContent);
 
       const config = loadConfig(testDir);
@@ -68,9 +68,9 @@ defaultFormat: table
       expect(config.profiles.production).toBeDefined();
       expect(config.profiles.production.ssl).toBe(true);
 
-      expect(config.safety.default_limit).toBe(50);
-      expect(config.safety.require_confirmation_for).toContain('DELETE');
-      expect(config.safety.blacklisted_operations).toContain('DROP DATABASE');
+      expect(config.safety.defaultLimit).toBe(50);
+      expect(config.safety.requireConfirmationFor).toContain('DELETE');
+      expect(config.safety.blacklistedOperations).toContain('DROP DATABASE');
 
       expect(config.defaultProfile).toBe('local');
       expect(config.defaultFormat).toBe('table');
@@ -86,7 +86,7 @@ defaultFormat: table
 This is just markdown content without frontmatter.
 `;
 
-      const configPath = path.join(testDir, '.claude', 'mysql-connector.local.md');
+      const configPath = path.join(testDir, '.claude', 'sql-config.local.md');
       fs.writeFileSync(configPath, configContent);
 
       expect(() => loadConfig(testDir)).toThrow('Invalid configuration file format');
@@ -95,11 +95,11 @@ This is just markdown content without frontmatter.
     it('should throw error if profiles are missing', () => {
       const configContent = `---
 safety:
-  default_limit: 100
+  defaultLimit: 100
 ---
 `;
 
-      const configPath = path.join(testDir, '.claude', 'mysql-connector.local.md');
+      const configPath = path.join(testDir, '.claude', 'sql-config.local.md');
       fs.writeFileSync(configPath, configContent);
 
       expect(() => loadConfig(testDir)).toThrow('Configuration must include "profiles" object');
@@ -116,7 +116,7 @@ profiles:
 ---
 `;
 
-      const configPath = path.join(testDir, '.claude', 'mysql-connector.local.md');
+      const configPath = path.join(testDir, '.claude', 'sql-config.local.md');
       fs.writeFileSync(configPath, configContent);
 
       expect(() => loadConfig(testDir)).toThrow('missing required field');
@@ -134,16 +134,16 @@ profiles:
 ---
 `;
 
-      const configPath = path.join(testDir, '.claude', 'mysql-connector.local.md');
+      const configPath = path.join(testDir, '.claude', 'sql-config.local.md');
       fs.writeFileSync(configPath, configContent);
 
       const config = loadConfig(testDir);
 
       expect(config.safety).toBeDefined();
-      expect(config.safety.default_limit).toBe(100);
-      expect(config.safety.require_confirmation_for).toContain('DELETE');
-      expect(config.safety.require_confirmation_for).toContain('UPDATE');
-      expect(config.safety.blacklisted_operations).toContain('DROP DATABASE');
+      expect(config.safety.defaultLimit).toBe(100);
+      expect(config.safety.requireConfirmationFor).toContain('DELETE');
+      expect(config.safety.requireConfirmationFor).toContain('UPDATE');
+      expect(config.safety.blacklistedOperations).toContain('DROP DATABASE');
     });
 
     it('should use first profile as default if defaultProfile not specified', () => {
@@ -164,7 +164,7 @@ profiles:
 ---
 `;
 
-      const configPath = path.join(testDir, '.claude', 'mysql-connector.local.md');
+      const configPath = path.join(testDir, '.claude', 'sql-config.local.md');
       fs.writeFileSync(configPath, configContent);
 
       const config = loadConfig(testDir);
@@ -184,7 +184,7 @@ profiles:
 ---
 `;
 
-      const configPath = path.join(testDir, '.claude', 'mysql-connector.local.md');
+      const configPath = path.join(testDir, '.claude', 'sql-config.local.md');
       fs.writeFileSync(configPath, configContent);
 
       const config = loadConfig(testDir);
@@ -211,7 +211,7 @@ profiles:
 ---
 `;
 
-      const configPath = path.join(testDir, '.claude', 'mysql-connector.local.md');
+      const configPath = path.join(testDir, '.claude', 'sql-config.local.md');
       fs.writeFileSync(configPath, configContent);
 
       const config = loadConfig(testDir);
@@ -243,7 +243,7 @@ profiles:
 ---
 `;
 
-      const configPath = path.join(testDir, '.claude', 'mysql-connector.local.md');
+      const configPath = path.join(testDir, '.claude', 'sql-config.local.md');
       fs.writeFileSync(configPath, configContent);
 
       config = loadConfig(testDir);

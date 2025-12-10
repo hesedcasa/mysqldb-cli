@@ -4,7 +4,7 @@ import { wrapper } from './cli/index.js';
 import { parseArguments } from './utils/index.js';
 
 /**
- * Main entry point for the MySQL CLI
+ * Main entry point for the SQL CLI
  */
 async function main(): Promise<void> {
   // Parse command line arguments
