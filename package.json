@@ -1,6 +1,6 @@
 {
   "name": "mysqldb-cli",
-  "version": "1.3.1",
+  "version": "1.4.0",
   "description": "A powerful command-line interface for MySQL and PostgreSQL database interaction with built-in safety features and multiple output formats",
   "main": "dist/index.js",
   "bin": {

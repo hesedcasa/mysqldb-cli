@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/hesedcasa/mysqldb-cli/compare/mysqldb-cli-v1.3.1...mysqldb-cli-v1.4.0) (2026-01-13)
+
+
+### 🎉 Features
+
+* improve destuctive operations ([0f64cc1](https://github.com/hesedcasa/mysqldb-cli/commit/0f64cc1a3808f0952ae3795d460db64c85ca25be))
+
 ## [1.3.1](https://github.com/hesedcasa/mysqldb-cli/compare/mysqldb-cli-v1.3.0...mysqldb-cli-v1.3.1) (2025-12-10)
 
 
