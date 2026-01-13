@@ -2,6 +2,7 @@ import readline from 'readline';
 
 import { getCurrentVersion, printAvailableCommands, printCommandDetail } from '../commands/index.js';
 import { COMMANDS } from '../config/index.js';
+import { OutputFormat } from '../utils/database.js';
 import {
   closeConnections,
   describeTable,
@@ -22,7 +23,8 @@ export class wrapper {
   private rl: readline.Interface;
   private config: Config | null = null;
   private currentProfile: string | null = null;
-  private currentFormat: 'table' | 'json' | 'csv' | 'toon' = 'table';
+  private currentFormat: OutputFormat = 'table';
+  private pendingConfirmation: { query: string; profile: string; format: OutputFormat; message: string } | null = null;
 
   constructor() {
     this.rl = readline.createInterface({
@@ -63,6 +65,23 @@ export class wrapper {
     if (!trimmed) {
       this.rl.prompt();
       return;
+    }
+
+    // Handle pending confirmation
+    if (this.pendingConfirmation) {
+      const response = trimmed.toLowerCase();
+      if (response === 'y' || response === 'yes') {
+        // Execute the query with confirmation bypassed
+        const { query, profile, format } = this.pendingConfirmation;
+        this.pendingConfirmation = null;
+        await this.executeQueryWithConfirmation(query, profile, format);
+        return;
+      } else {
+        console.log('\nOperation cancelled.');
+        this.pendingConfirmation = null;
+        this.rl.prompt();
+        return;
+      }
     }
 
     // Handle special commands
@@ -138,6 +157,31 @@ export class wrapper {
     }
 
     await this.runCommand(command, arg);
+  }
+
+  /**
+   * Execute a query with confirmation bypassed
+   * @param query - The SQL query to execute
+   * @param profile - The profile to use
+   * @param format - The output format
+   */
+  private async executeQueryWithConfirmation(query: string, profile: string, format: OutputFormat): Promise<void> {
+    try {
+      const result = await executeQuery(query, profile, format, true);
+
+      if (result.success) {
+        console.log('\n' + result.result);
+      } else {
+        if (result.error) {
+          console.error('\n' + result.error);
+        }
+      }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('Error executing query:', errorMessage);
+    }
+
+    this.rl.prompt();
   }
 
   /**
@@ -219,9 +263,23 @@ export class wrapper {
       if (result.success) {
         console.log('\n' + result.result);
       } else {
-        console.error('\n' + result.error);
+        if (result.error) {
+          console.error('\n' + result.error);
+        }
         if ('requiresConfirmation' in result && result.requiresConfirmation) {
-          console.log('\nNote: This operation requires confirmation.');
+          // Store pending confirmation and prompt user
+          this.pendingConfirmation = {
+            query: args.query,
+            profile,
+            format,
+            message: result.message || 'This is a destructive operation.',
+          };
+          if (result.message) {
+            console.log('\n' + result.message);
+          }
+          console.log('\nDo you want to proceed? (y/n)');
+          this.rl.prompt();
+          return;
         }
       }
     } catch (error: unknown) {

@@ -10,6 +10,7 @@ import type {
   DatabaseUtil,
   ExplainResult,
   IndexResult,
+  OutputFormat,
   QueryResult,
   TableListResult,
   TableStructureResult,
@@ -159,7 +160,8 @@ export class MySQLUtil implements DatabaseUtil {
   async executeQuery(
     profileName: string,
     query: string,
-    format: 'table' | 'json' | 'csv' | 'toon' = 'table'
+    format: OutputFormat = 'table',
+    skipConfirmation: boolean = false
   ): Promise<QueryResult> {
     // Validate query against blacklist
     const blacklistCheck = checkBlacklist(query, this.config.safety.blacklistedOperations);
@@ -170,14 +172,16 @@ export class MySQLUtil implements DatabaseUtil {
       };
     }
 
-    // Check if confirmation required
-    const confirmationCheck = requiresConfirmation(query, this.config.safety.requireConfirmationFor);
-    if (confirmationCheck.required) {
-      return {
-        success: false,
-        requiresConfirmation: true,
-        message: `WARNING: ${confirmationCheck.message}\n\nQuery: ${query}\n\nThis is a destructive operation. Please confirm you want to proceed.`,
-      };
+    // Check if confirmation required (unless skipped)
+    if (!skipConfirmation) {
+      const confirmationCheck = requiresConfirmation(query, this.config.safety.requireConfirmationFor);
+      if (confirmationCheck.required) {
+        return {
+          success: false,
+          requiresConfirmation: true,
+          message: `WARNING: ${confirmationCheck.message}\n\nQuery: ${query}`,
+        };
+      }
     }
 
     // Analyze query for warnings

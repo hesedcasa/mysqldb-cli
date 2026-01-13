@@ -87,7 +87,9 @@ export const runCommand = async (
     if (result.success) {
       console.log(result.result);
     } else {
-      console.error(result.error);
+      if (result.error) {
+        console.error(result.error);
+      }
       if ('requiresConfirmation' in result && result.requiresConfirmation) {
         console.error('\nTo execute destructive operations, use the interactive CLI mode.');
       }

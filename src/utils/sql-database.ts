@@ -11,6 +11,7 @@ import type {
   DatabaseListResult,
   ExplainResult,
   IndexResult,
+  OutputFormat,
   QueryResult,
   TableListResult,
   TableStructureResult,
@@ -42,15 +43,17 @@ function initDB(): DatabaseFactory {
  * @param query - SQL query to execute
  * @param profile - Database profile name
  * @param format - Output format (table, json, csv, toon)
+ * @param skipConfirmation - Skip confirmation check for destructive operations
  */
 export async function executeQuery(
   query: string,
   profile: string,
-  format: 'table' | 'json' | 'csv' | 'toon' = 'table'
+  format: OutputFormat = 'table',
+  skipConfirmation: boolean = false
 ): Promise<QueryResult> {
   const factory = initDB();
   const db = factory.getUtilForProfile(profile);
-  return await db.executeQuery(profile, query, format);
+  return await db.executeQuery(profile, query, format, skipConfirmation);
 }
 
 /**

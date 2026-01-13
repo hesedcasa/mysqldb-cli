@@ -90,8 +90,14 @@ export interface DatabaseUtil {
    * @param profileName - Profile name to use
    * @param query - SQL query to execute
    * @param format - Output format
+   * @param skipConfirmation - Skip confirmation check for destructive operations
    */
-  executeQuery(profileName: string, query: string, format?: OutputFormat): Promise<QueryResult>;
+  executeQuery(
+    profileName: string,
+    query: string,
+    format?: OutputFormat,
+    skipConfirmation?: boolean
+  ): Promise<QueryResult>;
 
   /**
    * List all databases
