@@ -44,7 +44,7 @@
     "@vitest/coverage-v8": "^4.0.9",
     "@vitest/ui": "^4.0.9",
     "eslint": "^9.39.1",
-    "globals": "^16.5.0",
+    "globals": "^17.0.0",
     "jiti": "^2.6.1",
     "prettier": "3.8.0",
     "ts-prune": "^0.10.3",
